@@ -68,14 +68,14 @@ export const AccountInputWithBankResolution = ({
     setIsResolved(false);
 
     try {
-      const result = await paystackService.resolveAccountNumber(accountNumber, bankCode);
+      const result = await paystackService.resolveAccountNumber({ accountNumber, bankCode });
       
-      if (result.account_name) {
-        form.setValue("accountName", result.account_name);
+      if (result.success && result.data?.account_name) {
+        form.setValue("accountName", result.data.account_name);
         setIsResolved(true);
         toast.success("Account resolved successfully!");
       } else {
-        toast.error("Could not resolve account name");
+        toast.error(result.message || "Could not resolve account name");
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to resolve account");
