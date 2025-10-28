@@ -101,7 +101,7 @@ export const AccountInputWithBankResolution = ({
     
     // Auto-resolve if bank is already selected and account is 10 digits
     if (value.length === 10 && bankCode) {
-      handleResolveAccount();
+      setTimeout(() => handleResolveAccount(), 300);
     }
   };
 
@@ -112,7 +112,7 @@ export const AccountInputWithBankResolution = ({
     
     // Auto-resolve if account is already 10 digits
     if (accountNumber.length === 10) {
-      setTimeout(handleResolveAccount, 100);
+      setTimeout(() => handleResolveAccount(), 300);
     }
   };
 
@@ -135,10 +135,20 @@ export const AccountInputWithBankResolution = ({
                     <SelectValue placeholder="Select bank" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="max-h-[300px]">
+                <SelectContent className="max-h-[300px] bg-background z-50">
                   {banks.map((bank) => (
                     <SelectItem key={bank.code} value={bank.code}>
-                      {bank.name}
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={bank.logo} 
+                          alt={bank.name}
+                          className="h-6 w-6 object-contain"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder.svg';
+                          }}
+                        />
+                        <span>{bank.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -55,6 +55,11 @@ const PaymentCallback = () => {
           setVerificationStatus('success');
           setPaymentStatus('success');
           toast.success("Payment verified successfully!");
+          
+          // Redirect to dashboard after 5 seconds
+          setTimeout(() => {
+            navigate(`/business/dashboard/${businessId}`);
+          }, 5000);
         } else {
           throw new Error(response.message || "Payment verification failed");
         }
