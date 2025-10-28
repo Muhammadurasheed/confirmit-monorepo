@@ -108,14 +108,14 @@ const BusinessDirectory = () => {
 
                 {/* Category Filter */}
                 <Select
-                  value={filters.category}
-                  onValueChange={(value) => setFilters({ ...filters, category: value, page: 1 })}
+                  value={filters.category || "all"}
+                  onValueChange={(value) => setFilters({ ...filters, category: value === "all" ? "" : value, page: 1 })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     <SelectItem value="retail">Retail</SelectItem>
                     <SelectItem value="technology">Technology</SelectItem>
                     <SelectItem value="food">Food & Beverage</SelectItem>
@@ -128,14 +128,14 @@ const BusinessDirectory = () => {
 
                 {/* Tier Filter */}
                 <Select
-                  value={filters.tier?.toString() || ""}
-                  onValueChange={(value) => setFilters({ ...filters, tier: value ? parseInt(value) : undefined, page: 1 })}
+                  value={filters.tier?.toString() || "all"}
+                  onValueChange={(value) => setFilters({ ...filters, tier: value === "all" ? undefined : parseInt(value), page: 1 })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All Tiers" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Tiers</SelectItem>
+                    <SelectItem value="all">All Tiers</SelectItem>
                     <SelectItem value="3">Premium Only</SelectItem>
                     <SelectItem value="2">Verified Only</SelectItem>
                     <SelectItem value="1">Basic</SelectItem>
