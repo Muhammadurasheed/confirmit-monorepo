@@ -84,14 +84,14 @@ export class ReceiptsService {
 
       // Call AI service with proper error handling
       const aiServiceUrl = this.configService.get('aiService.url');
-      this.logger.log(`Calling AI service: ${aiServiceUrl}/analyze-receipt`);
+      this.logger.log(`Calling AI service: ${aiServiceUrl}/api/analyze-receipt`);
 
       let aiResponse;
       let analysisResult;
 
       try {
         aiResponse = await axios.post(
-          `${aiServiceUrl}/analyze-receipt`,
+          `${aiServiceUrl}/api/analyze-receipt`,
           {
             image_url: imageUrl,
             receipt_id: receiptId,
