@@ -7,13 +7,6 @@ import { ReceiptsGateway } from './receipts.gateway';
 import { HederaService } from '../hedera/hedera.service';
 import axios from 'axios';
 
-// Initialize Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
 @Injectable()
 export class ReceiptsService {
   private readonly logger = new Logger(ReceiptsService.name);
@@ -23,7 +16,18 @@ export class ReceiptsService {
     @Inject('FIRESTORE') private readonly db: admin.firestore.Firestore,
     private readonly receiptsGateway: ReceiptsGateway,
     private readonly hederaService: HederaService,
-  ) {}
+  ) {
+    // Initialize Cloudinary with environment variables from ConfigService
+    const cloudinaryConfig = {
+      cloud_name: this.configService.get<string>('cloudinary.cloudName') || this.configService.get<string>('CLOUDINARY_CLOUD_NAME'),
+      api_key: this.configService.get<string>('cloudinary.apiKey') || this.configService.get<string>('CLOUDINARY_API_KEY'),
+      api_secret: this.configService.get<string>('cloudinary.apiSecret') || this.configService.get<string>('CLOUDINARY_API_SECRET'),
+    };
+
+    this.logger.log(`🔧 Cloudinary config: ${cloudinaryConfig.cloud_name} / ${cloudinaryConfig.api_key ? '✅ API key present' : '❌ API key missing'}`);
+
+    cloudinary.config(cloudinaryConfig);
+  }
 
   async scanReceipt(file: Express.Multer.File, dto: ScanReceiptDto) {
     const receiptId = this.generateReceiptId();
