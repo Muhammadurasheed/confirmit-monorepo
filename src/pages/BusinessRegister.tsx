@@ -106,8 +106,8 @@ const BusinessRegister = () => {
     form.setValue("tier", tier.toString() as "1" | "2" | "3");
   };
 
-  const handlePaymentComplete = async (paymentMethod: string, transactionId: string) => {
-    setPaymentComplete(true);
+  const handleProceedToPayment = async () => {
+    // First, register the business (without payment)
     setIsSubmitting(true);
 
     const data = form.getValues();
@@ -133,17 +133,10 @@ const BusinessRegister = () => {
       });
 
       if (response.success) {
-        toast.success("Business registered successfully!", {
-          description: "Your application is under review. You'll receive a confirmation email shortly.",
-        });
-        
-        // Navigate to business dashboard
-        setTimeout(() => {
-          navigate(`/business/dashboard/${response.business_id}`);
-        }, 2000);
+        // Navigate to payment page with business details
+        navigate(`/payment?businessId=${response.business_id}&businessName=${encodeURIComponent(data.name)}&tier=${data.tier}`);
       }
     } catch (error: any) {
-      setPaymentComplete(false);
       toast.error("Registration failed", {
         description: error.message || "Please try again later.",
       });
@@ -251,11 +244,6 @@ const BusinessRegister = () => {
                   <Form {...form}>
                     {currentStep === 2 ? (
                       <BankAccountStep form={form} />
-                    ) : currentStep === 4 ? (
-                      <PaymentStep
-                        tier={selectedTier!}
-                        onPaymentComplete={handlePaymentComplete}
-                      />
                     ) : (
                       <RegistrationForm
                         form={form}
@@ -266,41 +254,34 @@ const BusinessRegister = () => {
                   </Form>
 
                   {/* Navigation Buttons */}
-                  {currentStep !== 4 && (
-                    <div className="flex justify-between mt-8 pt-6 border-t">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleBack}
-                        disabled={currentStep === 1 || isSubmitting}
-                      >
-                        Back
-                      </Button>
+                  <div className="flex justify-between mt-8 pt-6 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleBack}
+                      disabled={currentStep === 1 || isSubmitting}
+                    >
+                      Back
+                    </Button>
 
-                      <Button
-                        type="button"
-                        onClick={handleNext}
-                        disabled={isSubmitting}
-                      >
-                        {currentStep < steps.length ? "Next" : "Continue to Payment"}
-                      </Button>
-                    </div>
-                  )}
+                    <Button
+                      type="button"
+                      onClick={currentStep === 4 ? handleProceedToPayment : handleNext}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : currentStep === 4 ? (
+                        "Proceed to Payment"
+                      ) : (
+                        "Next"
+                      )}
+                    </Button>
+                  </div>
 
-                  {/* Processing Overlay */}
-                  {paymentComplete && isSubmitting && (
-                    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-                      <Card className="p-8 text-center space-y-4">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-                        <div>
-                          <h3 className="text-lg font-semibold">Processing Registration...</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Please wait while we complete your registration
-                          </p>
-                        </div>
-                      </Card>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             </motion.div>

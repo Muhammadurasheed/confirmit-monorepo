@@ -127,3 +127,10 @@ export const validateAccountNameMatch = (
     warning: '⚠️ Account name does not match business name. This may cause verification delays.',
   };
 };
+
+// Export as service object for easy import
+export const paystackService = {
+  resolveAccountNumber,
+  validateAccountNameMatch,
+};
+

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, ShieldCheck, TrendingDown, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { AccountInput } from "@/components/features/account-check/AccountInput";
+import { AccountInputWithBankResolution } from "@/components/features/account-check/AccountInputWithBankResolution";
 import { AccountCheckProgress } from "@/components/features/account-check/AccountCheckProgress";
 import { TrustScore } from "@/components/features/account-check/TrustScore";
 import { FraudAlerts } from "@/components/features/account-check/FraudAlerts";
@@ -139,7 +139,7 @@ const AccountCheck = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <AccountInput onSubmit={handleCheckAccount} isLoading={isChecking} />
+                    <AccountInputWithBankResolution onSubmit={handleCheckAccount} isLoading={isChecking} />
                   </CardContent>
                 </Card>
               </motion.div>

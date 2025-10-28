@@ -40,41 +40,11 @@ const PaymentStep = ({ tier, onPaymentComplete }: PaymentStepProps) => {
     toast.success("Address copied to clipboard!");
   };
 
-  const handlePayment = async () => {
-    setIsProcessing(true);
-
-    try {
-      if (paymentMethod === "hedera") {
-        setPaymentStatus("waiting");
-        
-        // TODO: In production, integrate with actual Hedera SDK
-        // For now, simulate the complete flow with realistic timing
-        
-        // Step 1: User would send USDT to the address
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-        // Step 2: Monitor Hedera network for transaction
-        // In production: Use Hedera Mirror Node API to verify transaction
-        toast.info("Monitoring Hedera network for your transaction...");
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Step 3: Confirm transaction on blockchain
-        setPaymentStatus("confirmed");
-        toast.success("Payment confirmed on Hedera blockchain!");
-        
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        onPaymentComplete("hedera", `HCS-${Date.now()}`);
-      } else {
-        // Card/Bank transfer flow
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        onPaymentComplete(paymentMethod, `PAY-${Date.now()}`);
-      }
-    } catch (error) {
-      toast.error("Payment failed. Please try again.");
-      setPaymentStatus("idle");
-    } finally {
-      setIsProcessing(false);
-    }
+  // This component is now deprecated - payment happens on dedicated payment page
+  // Keep for backward compatibility but navigate to new flow
+  const handlePayment = () => {
+    toast.info("Redirecting to payment page...");
+    // Will be replaced with actual navigation in BusinessRegister
   };
 
   return (

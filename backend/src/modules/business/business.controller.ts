@@ -14,8 +14,6 @@ export class BusinessController {
   ) {}
 
   @Post('register')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Register new business' })
   async registerBusiness(@Body() body: any) {
     return this.businessService.registerBusiness(body);
