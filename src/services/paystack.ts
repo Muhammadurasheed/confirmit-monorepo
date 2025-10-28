@@ -24,8 +24,10 @@ export const resolveAccountNumber = async (
   params: ResolveAccountParams
 ): Promise<ResolveAccountResponse> => {
   try {
+    // API_BASE_URL already includes /api, so don't add it again
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
     const response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL || 'https://api.legit.africa'}/api/accounts/resolve`,
+      `${apiBaseUrl}/accounts/resolve`,
       {
         method: 'POST',
         headers: {

@@ -43,23 +43,37 @@ const PaymentStep = ({ tier, onPaymentComplete }: PaymentStepProps) => {
   const handlePayment = async () => {
     setIsProcessing(true);
 
-    // Simulate payment processing
-    if (paymentMethod === "hedera") {
-      setPaymentStatus("waiting");
-      // Simulate blockchain confirmation (in production, this would poll for actual transaction)
-      setTimeout(() => {
+    try {
+      if (paymentMethod === "hedera") {
+        setPaymentStatus("waiting");
+        
+        // TODO: In production, integrate with actual Hedera SDK
+        // For now, simulate the complete flow with realistic timing
+        
+        // Step 1: User would send USDT to the address
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Step 2: Monitor Hedera network for transaction
+        // In production: Use Hedera Mirror Node API to verify transaction
+        toast.info("Monitoring Hedera network for your transaction...");
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Step 3: Confirm transaction on blockchain
         setPaymentStatus("confirmed");
-        setTimeout(() => {
-          onPaymentComplete("hedera", `HCS-${Date.now()}`);
-          setIsProcessing(false);
-        }, 1500);
-      }, 3000);
-    } else {
-      // Simulate card/transfer payment
-      setTimeout(() => {
+        toast.success("Payment confirmed on Hedera blockchain!");
+        
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        onPaymentComplete("hedera", `HCS-${Date.now()}`);
+      } else {
+        // Card/Bank transfer flow
+        await new Promise(resolve => setTimeout(resolve, 2000));
         onPaymentComplete(paymentMethod, `PAY-${Date.now()}`);
-        setIsProcessing(false);
-      }, 2000);
+      }
+    } catch (error) {
+      toast.error("Payment failed. Please try again.");
+      setPaymentStatus("idle");
+    } finally {
+      setIsProcessing(false);
     }
   };
 

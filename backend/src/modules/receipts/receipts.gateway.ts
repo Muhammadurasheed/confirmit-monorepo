@@ -21,19 +21,30 @@ export class ReceiptsGateway
   server: Server;
 
   private readonly logger = new Logger(ReceiptsGateway.name);
+  private connectedClients = new Map<string, number>();
 
   handleConnection(client: Socket) {
-    this.logger.log(`Client connected: ${client.id}`);
+    // Only log first connection, not reconnections
+    const count = this.connectedClients.get(client.id) || 0;
+    if (count === 0) {
+      this.logger.log(`Client connected: ${client.id}`);
+    }
+    this.connectedClients.set(client.id, count + 1);
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected: ${client.id}`);
+    // Only log if client disconnects after being connected for a while
+    const count = this.connectedClients.get(client.id) || 0;
+    if (count <= 1) {
+      this.connectedClients.delete(client.id);
+    }
   }
 
   @SubscribeMessage('subscribe')
   handleSubscribe(client: Socket, receiptId: string) {
     client.join(receiptId);
-    this.logger.log(`Client ${client.id} subscribed to receipt ${receiptId}`);
+    // Only log subscription, not connection churn
+    this.logger.debug(`Client ${client.id} subscribed to receipt ${receiptId}`);
   }
 
   emitProgress(receiptId: string, progress: number, status: string, p0: string) {

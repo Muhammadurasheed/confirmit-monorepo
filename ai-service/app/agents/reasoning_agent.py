@@ -89,23 +89,24 @@ class ReasoningAgent:
         score = 70
 
         # Vision confidence (weight: 20%)
-        ocr_confidence = vision.get("confidence", 70)
+        ocr_confidence = vision.get("confidence", 70) if vision else 70
         score += (ocr_confidence - 70) * 0.2
 
         # Forensic analysis (weight: 30%)
-        manipulation_score = forensic.get("manipulation_score", 0)
+        manipulation_score = forensic.get("manipulation_score", 0) if forensic else 0
         score -= manipulation_score * 0.3
 
         # Metadata (weight: 20%)
-        metadata_flags = len(metadata.get("flags", []))
+        metadata_flags = len(metadata.get("flags", [])) if metadata else 0
         score -= metadata_flags * 5
 
         # Reputation (weight: 30%)
-        fraud_reports = reputation.get("total_fraud_reports", 0)
+        fraud_reports = reputation.get("total_fraud_reports", 0) if reputation else 0
         score -= fraud_reports * 10
 
         # Bonus for verified merchant
-        if reputation.get("merchant", {}).get("verified"):
+        merchant = reputation.get("merchant") if reputation else None
+        if merchant and isinstance(merchant, dict) and merchant.get("verified"):
             score += 15
 
         # Clamp to 0-100
@@ -117,8 +118,8 @@ class ReasoningAgent:
         """Determine final verdict based on score and critical findings"""
         
         # Critical red flags
-        fraud_reports = reputation.get("total_fraud_reports", 0)
-        manipulation_score = forensic.get("manipulation_score", 0)
+        fraud_reports = reputation.get("total_fraud_reports", 0) if reputation else 0
+        manipulation_score = forensic.get("manipulation_score", 0) if forensic else 0
 
         if fraud_reports >= 3 or manipulation_score >= 80:
             return "fraudulent"
