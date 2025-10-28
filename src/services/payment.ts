@@ -153,8 +153,8 @@ export const paymentService = {
   /**
    * Poll payment status (for crypto payments)
    */
-  async getPaymentStatus(paymentId: string): Promise<{ status: string; data?: any }> {
-    const response = await fetch(`${API_BASE_URL}/business/payment/status/${paymentId}`, {
+  async getPaymentStatus(businessId: string): Promise<{ status: string; data?: any }> {
+    const response = await fetch(`${API_BASE_URL}/business/payment/status/${businessId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

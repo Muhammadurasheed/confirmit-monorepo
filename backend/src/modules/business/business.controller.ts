@@ -141,4 +141,10 @@ export class BusinessController {
   async getTierPricing(@Param('tier') tier: string) {
     return this.businessPaymentService.getTierPricing(parseInt(tier, 10));
   }
+
+  @Get('payment/status/:businessId')
+  @ApiOperation({ summary: 'Get payment status for business registration' })
+  async getPaymentStatus(@Param('businessId') businessId: string) {
+    return this.businessService.getPaymentStatus(businessId);
+  }
 }

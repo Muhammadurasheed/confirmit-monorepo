@@ -37,7 +37,7 @@ const ManualPayment = () => {
       try {
         const response = await paymentService.getPaymentStatus(businessId);
         
-        if (response.status === 'confirmed') {
+        if (response.status === 'completed') {
           setPaymentStatus('completed');
           setIsPolling(false);
           clearInterval(pollInterval);

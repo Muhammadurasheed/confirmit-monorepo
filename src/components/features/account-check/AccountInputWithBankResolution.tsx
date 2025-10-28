@@ -5,18 +5,11 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Loader2, Search, CheckCircle } from "lucide-react";
 import { paystackService } from "@/services/paystack";
 import { toast } from "sonner";
-import banks from "@/data/banks.json";
+import { BankSearchSelect } from "@/components/shared/BankSearchSelect";
 
 const accountSchema = z.object({
   accountNumber: z.string().regex(/^\d{10}$/, "Account number must be 10 digits"),
@@ -55,12 +48,10 @@ export const AccountInputWithBankResolution = ({
 
   const handleResolveAccount = async () => {
     if (!accountNumber || !bankCode) {
-      toast.error("Please enter account number and select bank");
       return;
     }
 
     if (accountNumber.length !== 10) {
-      toast.error("Account number must be 10 digits");
       return;
     }
 
@@ -76,10 +67,12 @@ export const AccountInputWithBankResolution = ({
         toast.success("Account resolved successfully!");
       } else {
         toast.error(result.message || "Could not resolve account name");
+        setIsResolved(false);
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to resolve account");
       console.error("Account resolution error:", error);
+      setIsResolved(false);
     } finally {
       setIsResolving(false);
     }
@@ -119,40 +112,21 @@ export const AccountInputWithBankResolution = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Bank Selection */}
+        {/* Bank Selection with Search */}
         <FormField
           control={form.control}
           name="bankCode"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Bank Name</FormLabel>
-              <Select
-                onValueChange={handleBankChange}
-                value={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select bank" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="max-h-[300px] bg-background z-50">
-                  {banks.map((bank) => (
-                    <SelectItem key={bank.code} value={bank.code}>
-                      <div className="flex items-center gap-3">
-                        <img 
-                          src={bank.logo} 
-                          alt={bank.name}
-                          className="h-6 w-6 object-contain"
-                          onError={(e) => {
-                            e.currentTarget.src = '/placeholder.svg';
-                          }}
-                        />
-                        <span>{bank.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <BankSearchSelect
+                  value={field.value}
+                  onValueChange={handleBankChange}
+                  disabled={isLoading || isResolving}
+                  placeholder="Search and select bank"
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

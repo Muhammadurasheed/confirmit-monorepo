@@ -3,13 +3,12 @@ import { UseFormReturn } from "react-hook-form";
 import { BusinessFormData } from "@/pages/BusinessRegister";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { resolveAccountNumber, validateAccountNameMatch } from "@/services/paystack";
-import banksData from "@/data/banks.json";
 import { toast } from "sonner";
+import { BankSearchSelect } from "@/components/shared/BankSearchSelect";
 
 interface BankAccountStepProps {
   form: UseFormReturn<BusinessFormData>;
@@ -102,30 +101,14 @@ const BankAccountStep = ({ form }: BankAccountStepProps) => {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Bank *</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your bank" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent className="max-h-[300px]">
-                {banksData.map((bank) => (
-                  <SelectItem key={bank.code} value={bank.code}>
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={bank.logo}
-                        alt={bank.name}
-                        className="h-5 w-5 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.src = "https://nigerianbanks.xyz/logo/default-image.png";
-                        }}
-                      />
-                      <span>{bank.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              <BankSearchSelect
+                value={field.value}
+                onValueChange={field.onChange}
+                disabled={isResolving}
+                placeholder="Search and select your bank"
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}

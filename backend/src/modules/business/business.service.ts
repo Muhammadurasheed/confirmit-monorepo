@@ -471,4 +471,30 @@ export class BusinessService {
       message: 'Payment completed. Application is now under review.',
     };
   }
+
+  /**
+   * Get payment status for a business
+   */
+  async getPaymentStatus(businessId: string) {
+    this.logger.log(`Checking payment status for ${businessId}`);
+
+    const businessDoc = await this.db
+      .collection('businesses')
+      .doc(businessId)
+      .get();
+
+    if (!businessDoc.exists) {
+      throw new Error('Business not found');
+    }
+
+    const businessData = businessDoc.data();
+    const paymentStatus = businessData.verification?.payment_status || 'pending';
+    const verificationStatus = businessData.verification?.status || 'pending';
+
+    return {
+      status: paymentStatus,
+      verification_status: verificationStatus,
+      data: businessData.verification?.payment_data || null,
+    };
+  }
 }
