@@ -387,28 +387,44 @@ export class BusinessService {
   async getPendingBusinesses() {
     this.logger.log('Fetching pending businesses for admin review');
 
-    // Use simple where query to avoid composite index requirement
-    const snapshot = await this.db
+    // Fetch businesses with status 'pending' OR 'under_review'
+    const pendingSnapshot = await this.db
       .collection('businesses')
       .where('verification.status', '==', 'pending')
       .get();
 
-    const businesses = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        business_id: doc.id,
-        name: data.name,
-        logo: data.logo,
-        category: data.category,
-        contact: data.contact,
-        verification: data.verification,
-        created_at: data.created_at,
-        bank_account: {
-          bank_code: data.bank_account?.bank_code,
-          account_name: data.bank_account?.account_name,
-        },
-      };
-    });
+    const underReviewSnapshot = await this.db
+      .collection('businesses')
+      .where('verification.status', '==', 'under_review')
+      .get();
+
+    // Combine results
+    const allDocs = [...pendingSnapshot.docs, ...underReviewSnapshot.docs];
+
+    // Map and sort by created_at descending
+    const businesses = allDocs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          business_id: doc.id,
+          name: data.name,
+          logo: data.logo,
+          category: data.category,
+          contact: data.contact,
+          verification: data.verification,
+          created_at: data.created_at,
+          bank_account: {
+            bank_code: data.bank_account?.bank_code,
+            account_name: data.bank_account?.account_name,
+          },
+        };
+      })
+      .sort((a, b) => {
+        // Sort by created_at descending (newest first)
+        const timeA = a.created_at?._seconds || 0;
+        const timeB = b.created_at?._seconds || 0;
+        return timeB - timeA;
+      });
 
     return {
       success: true,

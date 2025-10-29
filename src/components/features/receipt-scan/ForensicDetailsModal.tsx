@@ -67,9 +67,7 @@ export const ForensicDetailsModal = ({
                 </div>
                 <Progress 
                   value={forensicDetails.manipulation_score} 
-                  className="h-2"
-                  // @ts-ignore
-                  indicatorClassName={forensicDetails.manipulation_score > 50 ? "bg-destructive" : "bg-success"}
+                  className={`h-2 ${forensicDetails.manipulation_score > 50 ? '[&>div]:bg-destructive' : '[&>div]:bg-green-500'}`}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Likelihood that the image has been digitally altered

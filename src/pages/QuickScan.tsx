@@ -46,11 +46,25 @@ const QuickScan = () => {
     },
     onComplete: (data) => {
       console.log('✅ Analysis complete in QuickScan:', data);
-      console.log('📦 Data structure:', JSON.stringify(data, null, 2));
+      console.log('📦 Full data structure:', JSON.stringify(data, null, 2));
       
-      const analysisData = data.data || data.analysis || data;
-      console.log('📊 Extracted analysis data:', JSON.stringify(analysisData, null, 2));
+      // Extract analysis from nested structure: data.data.analysis
+      let analysisData;
+      if (data.data?.analysis) {
+        // WebSocket returns { data: { analysis: {...} } }
+        analysisData = data.data.analysis;
+        console.log('📊 Extracted from data.data.analysis');
+      } else if (data.analysis) {
+        // Fallback: { analysis: {...} }
+        analysisData = data.analysis;
+        console.log('📊 Extracted from data.analysis');
+      } else {
+        // Fallback: treat data as analysis
+        analysisData = data;
+        console.log('📊 Using data as analysis');
+      }
       
+      console.log('📊 Final analysis data:', JSON.stringify(analysisData, null, 2));
       setResults(analysisData);
       completeAnalysis();
       toast.success('Analysis complete!');
@@ -287,19 +301,19 @@ const QuickScan = () => {
                 {/* Results */}
                 <ResultsDisplay
                   receiptId={currentReceipt.receiptId}
-                  trustScore={results.trustScore || 0}
-                  verdict={results.verdict || 'unclear'}
+                  trustScore={(results.trust_score || results.trustScore || 0) as number}
+                  verdict={(results.verdict || 'unclear') as any}
                   issues={results.issues || []}
                   recommendation={results.recommendation || 'Analysis completed. Review the details below.'}
                   forensicDetails={{
-                    ocr_confidence: (results.forensicDetails?.ocrConfidence || (results.forensicDetails as any)?.ocr_confidence || 0) as number,
-                    manipulation_score: (results.forensicDetails?.manipulationScore || (results.forensicDetails as any)?.manipulation_score || 0) as number,
-                    metadata_flags: (results.forensicDetails?.metadataFlags || (results.forensicDetails as any)?.metadata_flags || []) as string[],
+                    ocr_confidence: (results.forensic_details?.ocr_confidence || results.forensicDetails?.ocr_confidence || results.forensicDetails?.ocrConfidence || 0) as number,
+                    manipulation_score: (results.forensic_details?.manipulation_score || results.forensicDetails?.manipulation_score || results.forensicDetails?.manipulationScore || 0) as number,
+                    metadata_flags: (results.forensic_details?.metadata_flags || results.forensicDetails?.metadata_flags || results.forensicDetails?.metadataFlags || []) as string[],
                   }}
                   merchant={results.merchant ? {
                     name: results.merchant.name,
                     verified: results.merchant.verified,
-                    trust_score: (results.merchant.trustScore || (results.merchant as any).trust_score || 0) as number,
+                    trust_score: (results.merchant.trust_score || results.merchant.trustScore || 0) as number,
                   } : undefined}
                   hederaAnchor={currentReceipt.hederaAnchor ? {
                     transaction_id: currentReceipt.hederaAnchor.transactionId,

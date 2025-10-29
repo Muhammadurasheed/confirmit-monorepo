@@ -20,11 +20,13 @@ export interface Receipt {
 }
 
 export interface AnalysisResult {
-  trustScore: number;
+  trustScore?: number;
+  trust_score?: number; // Backend snake_case
   verdict: TrustVerdict;
   issues: Issue[];
   recommendation: string;
-  forensicDetails: ForensicDetails;
+  forensicDetails?: ForensicDetails;
+  forensic_details?: ForensicDetails; // Backend snake_case
   merchant?: MerchantInfo;
 }
 
@@ -35,23 +37,32 @@ export interface Issue {
 }
 
 export interface ForensicDetails {
-  ocrConfidence: number;
-  manipulationScore: number;
-  metadataFlags: string[];
+  ocrConfidence?: number;
+  ocr_confidence?: number; // Backend snake_case
+  manipulationScore?: number;
+  manipulation_score?: number; // Backend snake_case
+  metadataFlags?: string[];
+  metadata_flags?: string[]; // Backend snake_case
   agentLogs?: AgentLog[];
+  agent_logs?: AgentLog[]; // Backend snake_case
 }
 
 export interface AgentLog {
   agent: string;
   status: string;
-  timestamp: Date;
+  timestamp?: Date;
   details?: string;
+  confidence?: number;
+  manipulation_score?: number;
+  flags?: number;
+  accounts_checked?: number;
 }
 
 export interface MerchantInfo {
   name: string;
   verified: boolean;
-  trustScore: number;
+  trustScore?: number;
+  trust_score?: number; // Backend snake_case
 }
 
 export interface HederaAnchor {
