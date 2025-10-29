@@ -129,18 +129,23 @@ export class HederaService {
         this.configService.get('hedera.tokenId'),
       );
 
-      // Create NFT metadata
-      const metadata = {
-        business_id: businessId,
-        business_name: businessName,
-        trust_score: trustScore,
-        verification_tier: verificationTier,
-        verified_at: new Date().toISOString(),
-        network: 'Legit (ConfirmIT)',
-        type: 'Trust_ID_Certificate',
+      // Create NFT metadata - MUST be under 100 bytes for Hedera
+      // Store only essential info, full details stored in Firestore
+      const compactMetadata = {
+        id: businessId,
+        ts: trustScore,
+        tier: verificationTier,
+        v: new Date().toISOString().split('T')[0], // Date only
       };
 
-      const metadataBuffer = Buffer.from(JSON.stringify(metadata));
+      const metadataBuffer = Buffer.from(JSON.stringify(compactMetadata));
+      
+      // Validate size (Hedera limit is 100 bytes)
+      if (metadataBuffer.length > 100) {
+        throw new Error(`Metadata too large: ${metadataBuffer.length} bytes (max 100)`);
+      }
+      
+      this.logger.log(`NFT metadata size: ${metadataBuffer.length} bytes`);
 
       // Mint NFT
       const mintTx = await new TokenMintTransaction()
@@ -155,11 +160,22 @@ export class HederaService {
         `NFT minted successfully. Serial: ${serialNumber.toString()}`,
       );
 
+      // Full metadata for Firestore (not limited by Hedera constraints)
+      const fullMetadata = {
+        business_id: businessId,
+        business_name: businessName,
+        trust_score: trustScore,
+        verification_tier: verificationTier,
+        verified_at: new Date().toISOString(),
+        network: 'Legit (ConfirmIT)',
+        type: 'Trust_ID_Certificate',
+      };
+
       const nftData = {
         token_id: tokenId.toString(),
         serial_number: serialNumber.toString(),
         business_id: businessId,
-        metadata,
+        metadata: fullMetadata, // Store full metadata in Firestore
         mint_transaction_id: mintTx.transactionId.toString(),
         explorer_url: `https://hashscan.io/${this.configService.get('hedera.network')}/token/${tokenId}/serial/${serialNumber}`,
         minted_at: admin.firestore.FieldValue.serverTimestamp(),

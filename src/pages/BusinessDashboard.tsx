@@ -45,13 +45,32 @@ const BusinessDashboard = () => {
       if (!id) return;
 
       try {
-        const [businessData, statsData] = await Promise.all([
-          getBusiness(id),
-          getBusinessStats(id),
-        ]);
-
+        // Fetch business data first
+        const businessData = await getBusiness(id);
         setBusiness(businessData.data);
-        setStats(statsData.stats);
+
+        // Only fetch stats if business is approved
+        if (businessData.data.verification?.status === 'approved') {
+          try {
+            const statsData = await getBusinessStats(id);
+            setStats(statsData.stats);
+          } catch (statsError) {
+            // Stats might not be available yet, use defaults
+            console.warn('Stats not available:', statsError);
+            setStats({
+              profileViews: 0,
+              verifications: 0,
+              successfulTransactions: 0,
+            });
+          }
+        } else {
+          // Business not approved yet, use default stats
+          setStats({
+            profileViews: 0,
+            verifications: 0,
+            successfulTransactions: 0,
+          });
+        }
       } catch (error: any) {
         toast.error("Failed to load business data", {
           description: error.message,
@@ -154,6 +173,51 @@ const BusinessDashboard = () => {
               <Button asChild>
                 <Link to="/business">Back to Business Directory</Link>
               </Button>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show pending approval message if not approved yet
+  if (business.verification?.status !== 'approved') {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center p-4">
+          <Card className="max-w-2xl">
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
+                <div className="bg-warning/10 p-4 rounded-full">
+                  <Clock className="h-12 w-12 text-warning" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Application Under Review</CardTitle>
+              <CardDescription className="text-base mt-2">
+                Your business registration is being reviewed by our team
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-muted rounded-lg p-4">
+                <p className="text-sm mb-2"><strong>Business Name:</strong> {business.name}</p>
+                <p className="text-sm mb-2"><strong>Business ID:</strong> <code className="bg-background px-2 py-1 rounded text-xs">{id}</code></p>
+                <p className="text-sm"><strong>Status:</strong> <Badge variant="outline" className="ml-2 bg-warning/10 text-warning border-warning capitalize">{business.verification?.status || 'Pending'}</Badge></p>
+              </div>
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p>✓ Payment confirmed</p>
+                <p>⏳ Verification in progress (24-48 hours)</p>
+                <p>📧 You'll receive an email once approved</p>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <Button asChild variant="outline" className="flex-1">
+                  <Link to="/">Back to Home</Link>
+                </Button>
+                <Button asChild className="flex-1">
+                  <Link to={`/business/profile/${id}`}>View Public Profile</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </main>

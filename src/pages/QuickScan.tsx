@@ -287,9 +287,9 @@ const QuickScan = () => {
                   issues={results.issues}
                   recommendation={results.recommendation}
                   forensicDetails={{
-                    ocr_confidence: results.forensicDetails.ocrConfidence,
-                    manipulation_score: results.forensicDetails.manipulationScore,
-                    metadata_flags: results.forensicDetails.metadataFlags,
+                    ocr_confidence: results.forensicDetails?.ocrConfidence || 0,
+                    manipulation_score: results.forensicDetails?.manipulationScore || 0,
+                    metadata_flags: results.forensicDetails?.metadataFlags || [],
                   }}
                   merchant={results.merchant ? {
                     name: results.merchant.name,

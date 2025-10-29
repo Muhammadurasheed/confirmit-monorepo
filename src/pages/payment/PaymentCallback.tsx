@@ -138,8 +138,11 @@ const PaymentCallback = () => {
               });
             }
             
+            // Payment successful - redirect to pending page (not dashboard yet - needs admin approval)
+            toast.success("Payment verified successfully!");
+            
             setTimeout(() => {
-              navigate(`/business/dashboard/${bizId}`);
+              navigate(`/payment/pending?businessId=${bizId}`);
             }, 3000);
           } else {
             throw new Error(response.message || "Payment verification failed");
