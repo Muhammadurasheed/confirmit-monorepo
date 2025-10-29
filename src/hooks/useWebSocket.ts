@@ -21,13 +21,14 @@ export const useWebSocket = ({ receiptId, onProgress, onComplete, onError }: Use
     console.log(`🔌 Connecting to WebSocket: ${WS_BASE_URL}/receipts`);
 
     const socket = io(`${WS_BASE_URL}/receipts`, {
-      transports: ['websocket', 'polling'],
-      path: '/socket.io/',
+      transports: ['websocket'],
+      // Use default Socket.IO path to avoid mismatches
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      timeout: 20000,
+      timeout: 30000,
+      withCredentials: false,
     });
 
     socket.on('connect', () => {
