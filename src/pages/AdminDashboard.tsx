@@ -288,23 +288,25 @@ export default function AdminDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <p className="text-sm font-medium mb-1">Contact</p>
-                      <p className="text-sm text-muted-foreground">
-                        {business.contact.email}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {business.contact.phone}
-                      </p>
+                  {business.contact && (
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm font-medium mb-1">Contact</p>
+                        <p className="text-sm text-muted-foreground">
+                          {business.contact.email || 'N/A'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {business.contact.phone || 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium mb-1">Address</p>
+                        <p className="text-sm text-muted-foreground">
+                          {business.contact.address || 'N/A'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium mb-1">Address</p>
-                      <p className="text-sm text-muted-foreground">
-                        {business.contact.address}
-                      </p>
-                    </div>
-                  </div>
+                  )}
 
                   <div className="flex gap-2">
                     <Button

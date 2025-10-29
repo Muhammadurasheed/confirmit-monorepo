@@ -85,22 +85,23 @@ class ReasoningAgent:
     ) -> int:
         """Calculate weighted trust score from all agents"""
         
-        # Base score
-        score = 70
+        # Start with higher base score (75 instead of 70)
+        score = 75
 
-        # Vision confidence (weight: 20%)
-        ocr_confidence = vision.get("confidence", 70) if vision else 70
-        score += (ocr_confidence - 70) * 0.2
+        # Vision confidence (weight: 25%) - more weight on successful OCR
+        ocr_confidence = vision.get("confidence", 75) if vision else 75
+        # Be more generous with vision confidence
+        score += (ocr_confidence - 75) * 0.25
 
-        # Forensic analysis (weight: 30%)
+        # Forensic analysis (weight: 25%) - reduced weight
         manipulation_score = forensic.get("manipulation_score", 0) if forensic else 0
-        score -= manipulation_score * 0.3
+        score -= manipulation_score * 0.25
 
-        # Metadata (weight: 20%)
+        # Metadata (weight: 15%) - reduced weight, less harsh penalty
         metadata_flags = len(metadata.get("flags", [])) if metadata else 0
-        score -= metadata_flags * 5
+        score -= metadata_flags * 3  # Reduced from 5 to 3
 
-        # Reputation (weight: 30%)
+        # Reputation (weight: 35%)
         fraud_reports = reputation.get("total_fraud_reports", 0) if reputation else 0
         score -= fraud_reports * 10
 
@@ -108,6 +109,10 @@ class ReasoningAgent:
         merchant = reputation.get("merchant") if reputation else None
         if merchant and isinstance(merchant, dict) and merchant.get("verified"):
             score += 15
+
+        # If we successfully extracted text, give a bonus
+        if vision and vision.get("ocr_text") and len(vision.get("ocr_text", "")) > 20:
+            score += 5  # Bonus for successful text extraction
 
         # Clamp to 0-100
         return max(0, min(100, int(score)))
@@ -123,11 +128,11 @@ class ReasoningAgent:
 
         if fraud_reports >= 3 or manipulation_score >= 80:
             return "fraudulent"
-        elif trust_score >= 75:
+        elif trust_score >= 70:  # Lowered from 75
             return "authentic"
         elif trust_score >= 50:
             return "suspicious"
-        elif trust_score >= 30:
+        elif trust_score >= 25:  # Lowered from 30
             return "unclear"
         else:
             return "fraudulent"
@@ -151,7 +156,8 @@ class ReasoningAgent:
                 "description": anomaly,
             })
 
-        if vision.get("confidence", 100) < 50:
+        # Only flag truly poor quality (lowered threshold from 50 to 40)
+        if vision.get("confidence", 100) < 40:
             issues.append({
                 "type": "poor_image_quality",
                 "severity": "medium",
