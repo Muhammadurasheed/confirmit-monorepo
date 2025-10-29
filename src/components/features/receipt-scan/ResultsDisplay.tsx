@@ -79,7 +79,9 @@ export const ResultsDisplay = ({
   const [showForensicModal, setShowForensicModal] = useState(false);
   const [showHederaModal, setShowHederaModal] = useState(false);
 
-  const config = verdictConfig[verdict];
+  // Normalize verdict to ensure it matches verdictConfig keys
+  const normalizedVerdict = verdict?.toLowerCase() as keyof typeof verdictConfig;
+  const config = verdictConfig[normalizedVerdict] || verdictConfig['unclear'];
   const VerdictIcon = config.icon;
 
   const handleAnchorToHedera = async () => {

@@ -259,43 +259,69 @@ export class BusinessService {
         business.verification.tier,
       );
 
-      // Mint Trust ID NFT on Hedera
-      const nftData = await this.hederaService.mintTrustIdNFT(
-        businessId,
-        business.name,
-        initialTrustScore,
-        business.verification.tier,
-      );
+      // Mint Trust ID NFT on Hedera (with graceful error handling)
+      let nftData: any = null;
+      let nftError: string | null = null;
+      
+      try {
+        nftData = await this.hederaService.mintTrustIdNFT(
+          businessId,
+          business.name,
+          initialTrustScore,
+          business.verification.tier,
+        );
+        this.logger.log(`✅ Trust ID NFT minted successfully for business: ${businessId}`);
+      } catch (error) {
+        this.logger.error(`⚠️ NFT minting failed (non-critical): ${error.message}`);
+        // Continue approval even if NFT minting fails
+        // Business can still be verified without NFT
+        nftError = error.message;
+        nftData = {
+          error: error.message,
+          note: 'Business approved but NFT minting failed. Contact admin to retry.',
+        };
+      }
 
       // Update business document
+      const updateData: any = {
+        'verification.status': 'approved',
+        'verification.verified': true,
+        'verification.approved_at': admin.firestore.FieldValue.serverTimestamp(),
+        'verification.approved_by': approvedBy,
+        trust_score: initialTrustScore,
+      };
+
+      // Only add NFT data if minting succeeded
+      if (!nftError && nftData?.token_id) {
+        updateData.hedera = {
+          trust_id_nft: {
+            token_id: nftData.token_id,
+            serial_number: nftData.serial_number,
+            explorer_url: nftData.explorer_url,
+          },
+        };
+      }
+
       await this.db
         .collection('businesses')
         .doc(businessId)
-        .update({
-          'verification.status': 'approved',
-          'verification.verified': true,
-          'verification.approved_at': admin.firestore.FieldValue.serverTimestamp(),
-          'verification.approved_by': approvedBy,
-          trust_score: initialTrustScore,
-          hedera: {
-            trust_id_nft: {
-              token_id: nftData.token_id,
-              serial_number: nftData.serial_number,
-              explorer_url: nftData.explorer_url,
-            },
-          },
-        });
+        .update(updateData);
 
-      this.logger.log(
-        `Business ${businessId} verified successfully with NFT ${nftData.serial_number}`,
-      );
+      const successMessage = nftError 
+        ? `Business ${businessId} verified (NFT minting pending: ${nftError})`
+        : `Business ${businessId} verified successfully with NFT ${nftData.serial_number}`;
+      
+      this.logger.log(successMessage);
 
       return {
         success: true,
         business_id: businessId,
         trust_score: initialTrustScore,
         nft: nftData,
-        message: 'Business verified successfully and Trust ID NFT minted',
+        message: nftError 
+          ? 'Business verified successfully (NFT minting pending)' 
+          : 'Business verified successfully and Trust ID NFT minted',
+        warning: nftError ? `NFT minting failed: ${nftError}. Business is still approved.` : undefined,
       };
     } catch (error) {
       this.logger.error(
