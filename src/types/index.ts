@@ -1,4 +1,4 @@
-// Core Types for ConfirmIT/Legit Platform
+// Core Types for ConfirmIT Platform
 
 export type TrustVerdict = "authentic" | "suspicious" | "fraudulent" | "unclear";
 export type RiskLevel = "high" | "medium" | "low";

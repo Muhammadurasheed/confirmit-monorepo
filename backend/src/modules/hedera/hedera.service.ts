@@ -167,7 +167,7 @@ export class HederaService {
         trust_score: trustScore,
         verification_tier: verificationTier,
         verified_at: new Date().toISOString(),
-        network: 'Legit (ConfirmIT)',
+        network: 'ConfirmIT',
         type: 'Trust_ID_Certificate',
       };
 

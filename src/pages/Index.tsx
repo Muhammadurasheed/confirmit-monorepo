@@ -147,7 +147,7 @@ const Index = () => {
         <section className="py-20">
           <Container>
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">How Legit Protects You</h2>
+              <h2 className="text-3xl font-bold mb-4">How Confirmit Protects You</h2>
               <p className="text-xl text-muted-foreground">
                 Three powerful tools to verify trust before you pay
               </p>
@@ -288,7 +288,7 @@ const Index = () => {
                     ))}
                   </div>
                   <p className="text-sm mb-4">
-                    "Legit saved me ₦850,000! The receipt looked real but the AI caught subtle manipulations. Incredible technology."
+                    "Confirmit saved me ₦850,000! The receipt looked real but the AI caught subtle manipulations. Incredible technology."
                   </p>
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -357,7 +357,7 @@ const Index = () => {
                 Ready to Protect Yourself?
               </h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Join thousands of Africans using Legit to verify trust before they pay
+                Join thousands of Africans using Confirmit to verify trust before they pay
               </p>
               <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
                 <Button size="lg" asChild>
