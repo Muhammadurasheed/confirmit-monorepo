@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CreditCard, Wallet, Sparkles } from "lucide-react";
+import { CreditCard, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Container from "@/components/layout/Container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PaymentMethodCard } from "@/components/features/payment/PaymentMethodCard";
-import { CryptoSelector } from "@/components/features/payment/CryptoSelector";
-import { usePaymentStore, CryptoCurrency } from "@/store/paymentStore";
+import { usePaymentStore } from "@/store/paymentStore";
 import { paymentService } from "@/services/payment";
 import { BUSINESS_TIERS } from "@/lib/constants";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,14 +22,13 @@ const PaymentSelection = () => {
   const businessName = searchParams.get('businessName');
   const tier = parseInt(searchParams.get('tier') || '1');
   
-  const [showCryptoSelector, setShowCryptoSelector] = useState(false);
+  
   const [pricing, setPricing] = useState<{ ngn: number; usd: number; discountedUsd: number } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
   const {
     selectedMethod,
     setPaymentMethod,
-    setSelectedCrypto,
     setBusinessContext,
     setPaymentStatus,
   } = usePaymentStore();
@@ -97,49 +95,12 @@ const PaymentSelection = () => {
     }
   };
 
-  const handleCryptoPayment = () => {
-    setPaymentMethod('nowpayments');
-    setShowCryptoSelector(true);
-  };
-
-  const handleCryptoSelected = async (crypto: CryptoCurrency) => {
-    setSelectedCrypto(crypto);
-    setIsLoading(true);
-    setPaymentStatus('initializing');
-
-    try {
-      const response = await paymentService.initializeNowPayments({
-        businessId: businessId!,
-        tier,
-        paymentMethod: 'nowpayments',
-        cryptocurrency: crypto,
-      });
-
-      if (response.success && response.invoice_url) {
-        // Store invoice/payment ID for callback verification
-        if (response.invoice_id) {
-          sessionStorage.setItem('nowpayments_invoice_id', response.invoice_id);
-        }
-        // Redirect to NOWPayments hosted invoice page
-        window.location.href = response.invoice_url;
-      } else {
-        throw new Error("Failed to initialize crypto payment. Please try again or contact support.");
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Crypto payment initialization failed");
-      setPaymentStatus('failed');
-      setShowCryptoSelector(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (!pricing) {
     return <div>Loading...</div>;
   }
 
   const tierInfo = BUSINESS_TIERS[tier as 1 | 2 | 3];
-  const hederaSavings = pricing.ngn - (pricing.discountedUsd * 1550); // Approx NGN
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-subtle">
@@ -167,27 +128,14 @@ const PaymentSelection = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Crypto Payment - Recommended */}
-              <PaymentMethodCard
-                icon={Wallet}
-                title="Pay with Crypto on Hedera"
-                description="HBAR, USDT, BTC, or ETH - Instant blockchain confirmation"
-                amount={`$${pricing.discountedUsd} USD`}
-                originalAmount={`₦${pricing.ngn.toLocaleString()}`}
-                discount="15%"
-                badges={["⚡ Instant", "🔒 Blockchain secured", "💰 Best price"]}
-                isRecommended={true}
-                isSelected={selectedMethod === 'nowpayments'}
-                onClick={handleCryptoPayment}
-              />
-
-              {/* Card Payment */}
+              {/* Card Payment - Primary Option */}
               <PaymentMethodCard
                 icon={CreditCard}
                 title="Pay with Card or Bank Transfer"
                 description="Debit card, credit card, or bank transfer via Paystack"
                 amount={`₦${pricing.ngn.toLocaleString()}`}
-                badges={["💳 All cards accepted", "🏦 Bank transfer"]}
+                badges={["💳 All cards accepted", "🏦 Bank transfer", "⚡ Instant verification"]}
+                isRecommended={true}
                 isSelected={selectedMethod === 'paystack'}
                 onClick={handlePaystackPayment}
               />
@@ -202,12 +150,12 @@ const PaymentSelection = () => {
                   <Sparkles className="h-6 w-6 text-primary" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="font-bold">Why pay with Hedera?</h3>
+                  <h3 className="font-bold">Secure Payment via Paystack</h3>
                   <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>✓ Save ₦{Math.round(hederaSavings).toLocaleString()} (15% discount)</li>
-                    <li>✓ Instant blockchain confirmation</li>
-                    <li>✓ Permanent proof of payment on Hedera network</li>
-                    <li>✓ Low transaction fees</li>
+                    <li>✓ Instant payment confirmation</li>
+                    <li>✓ Multiple payment options (Card, Bank Transfer, USSD)</li>
+                    <li>✓ Bank-grade security and encryption</li>
+                    <li>✓ Automatic activation after payment</li>
                   </ul>
                 </div>
               </div>
@@ -217,13 +165,6 @@ const PaymentSelection = () => {
       </main>
       <Footer />
 
-      {/* Crypto Selector Modal */}
-      <CryptoSelector
-        open={showCryptoSelector}
-        onClose={() => setShowCryptoSelector(false)}
-        onSelect={handleCryptoSelected}
-        usdAmount={pricing.discountedUsd}
-      />
     </div>
   );
 };

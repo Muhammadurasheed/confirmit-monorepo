@@ -40,25 +40,43 @@ export class AccountsService {
         accountData = accountDoc.data();
         this.logger.log('Using cached account data');
       } else {
-        // 2. Call AI service for reputation check
-        const aiServiceUrl = this.configService.get('aiService.url');
-        this.logger.log(`Calling AI service: ${aiServiceUrl}/api/check-account`);
+        // 2. Call AI service for reputation check (with fallback)
+        let aiResult;
+        
+        try {
+          const aiServiceUrl = this.configService.get('aiService.url');
+          this.logger.log(`Calling AI service: ${aiServiceUrl}/api/check-account`);
 
-        const response = await fetch(`${aiServiceUrl}/api/check-account`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            account_hash: accountHash,
-            bank_code: bankCode,
-            business_name: businessName,
-          }),
-        });
+          const response = await fetch(`${aiServiceUrl}/api/check-account`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              account_hash: accountHash,
+              bank_code: bankCode,
+              business_name: businessName,
+            }),
+          });
 
-        if (!response.ok) {
-          throw new Error(`AI service error: ${response.statusText}`);
+          if (!response.ok) {
+            throw new Error(`AI service error: ${response.statusText}`);
+          }
+
+          aiResult = await response.json();
+        } catch (error) {
+          this.logger.warn(`AI service unavailable, using default values: ${error.message}`);
+          
+          // Fallback to default safe values when AI service is unavailable
+          aiResult = {
+            trust_score: 50,
+            risk_level: 'medium',
+            fraud_reports: {
+              total: 0,
+              recent_30_days: 0,
+            },
+            verified_business_id: null,
+            flags: ['AI service unavailable - manual review recommended'],
+          };
         }
-
-        const aiResult = await response.json();
 
         // 3. Check if linked to verified business
         let verifiedBusiness = null;

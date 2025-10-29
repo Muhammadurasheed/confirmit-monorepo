@@ -14,8 +14,9 @@ const PaymentCallback = () => {
   const [searchParams] = useSearchParams();
   const [verificationStatus, setVerificationStatus] = useState<'verifying' | 'success' | 'failed'>('verifying');
   const [paymentData, setPaymentData] = useState<any>(null);
+  const [actualBusinessId, setActualBusinessId] = useState<string | null>(null);
   
-  const { businessId, tier, setPaymentStatus } = usePaymentStore();
+  const { businessId, tier, setPaymentStatus, setBusinessContext } = usePaymentStore();
   
   // Extract payment reference from URL
   const paystackReference = searchParams.get('reference') || searchParams.get('trxref');
@@ -30,13 +31,6 @@ const PaymentCallback = () => {
       
       if (!reference) {
         toast.error("No payment reference found");
-        setVerificationStatus('failed');
-        setTimeout(() => navigate('/business/register'), 2000);
-        return;
-      }
-
-      if (!businessId) {
-        toast.error("Business information missing");
         setVerificationStatus('failed');
         setTimeout(() => navigate('/business/register'), 2000);
         return;
@@ -93,22 +87,52 @@ const PaymentCallback = () => {
           
           await pollStatus();
         } else {
-          // Direct verification for Paystack or completed NOWPayments
+          // Direct verification for Paystack
+          // Extract businessId from URL if not in store (Paystack includes it in metadata)
+          let bizId = businessId;
+          
+          if (!bizId && paymentMethod === 'paystack') {
+            // Try to get businessId from the reference format: BIZ-{businessId}-{timestamp}
+            const refParts = reference.split('-');
+            if (refParts.length >= 2 && refParts[0] === 'BIZ') {
+              // Extract businessId from reference like "BIZ-MHBNZECR4NKMDP4-1730179736957"
+              bizId = `BIZ-${refParts[1]}`;
+            }
+          }
+          
+          if (!bizId) {
+            toast.error("Business information missing");
+            setVerificationStatus('failed');
+            setTimeout(() => navigate('/business/register'), 2000);
+            return;
+          }
+          
           const response = await paymentService.verifyPayment({
-            businessId,
+            businessId: bizId,
             paymentMethod,
             reference,
           });
 
           if (response.success) {
             setPaymentData(response.payment);
+            setActualBusinessId(bizId);
             setVerificationStatus('success');
             setPaymentStatus('success');
             toast.success("Payment verified successfully!");
             
+            // Update businessId in store if it wasn't there
+            if (!businessId) {
+              setBusinessContext({
+                businessId: bizId,
+                businessName: '',
+                tier: tier || 1,
+                amount: { ngn: 0, usd: 0 },
+              });
+            }
+            
             setTimeout(() => {
-              navigate(`/business/dashboard/${businessId}`);
-            }, 5000);
+              navigate(`/business/dashboard/${bizId}`);
+            }, 3000);
           } else {
             throw new Error(response.message || "Payment verification failed");
           }
@@ -126,7 +150,7 @@ const PaymentCallback = () => {
     };
 
     verifyPayment();
-  }, [paystackReference, nowpaymentsInvoiceId, paymentStatus, businessId, tier, setPaymentStatus, navigate]);
+  }, [paystackReference, nowpaymentsInvoiceId, paymentStatus, businessId, tier, setPaymentStatus, setBusinessContext, navigate]);
 
   const getDisplayAmount = () => {
     if (!paymentData) return '';
@@ -156,7 +180,7 @@ const PaymentCallback = () => {
               amount={getDisplayAmount()}
               reference={paystackReference || nowpaymentsInvoiceId || ''}
               paymentMethod={paystackReference ? 'Paystack' : 'Crypto'}
-              businessId={businessId || ''}
+              businessId={actualBusinessId || businessId || ''}
               transactionHash={paymentData.txn_id || paymentData.transaction}
               explorerUrl={
                 paymentData.txn_id

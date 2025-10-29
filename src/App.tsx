@@ -18,7 +18,6 @@ import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import PaymentSelection from "./pages/payment/PaymentSelection";
 import PaymentCallback from "./pages/payment/PaymentCallback";
-import ManualPayment from "./pages/payment/ManualPayment";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +42,6 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/payment" element={<PaymentSelection />} />
           <Route path="/payment/callback" element={<PaymentCallback />} />
-          <Route path="/payment/manual" element={<ManualPayment />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
