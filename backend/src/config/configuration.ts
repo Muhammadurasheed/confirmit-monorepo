@@ -32,6 +32,10 @@ export default () => ({
     secretKey: process.env.PAYSTACK_SECRET_KEY,
   },
   
+  // Frontend URL for callbacks (extract first URL from CORS_ORIGIN)
+  frontendUrl: process.env.FRONTEND_URL || 
+    (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',')[0] : 'http://localhost:5173'),
+  
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT, 10) || 6379,

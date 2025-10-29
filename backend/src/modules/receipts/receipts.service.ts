@@ -34,11 +34,14 @@ export class ReceiptsService {
     this.logger.log(`Starting receipt scan: ${receiptId}`);
 
     try {
-      // 1. Upload to Cloudinary
-      this.receiptsGateway.emitProgress(receiptId, 10, 'upload_complete', 'Image uploaded successfully');
+      // 1. Emit initial progress before starting upload
+      this.receiptsGateway.emitProgress(receiptId, 5, 'uploading', 'Starting upload...');
+      
+      // 2. Upload to Cloudinary
       const uploadResult = await this.uploadToCloudinary(file);
+      this.receiptsGateway.emitProgress(receiptId, 15, 'upload_complete', 'Image uploaded successfully');
 
-      // 2. Create receipt document
+      // 3. Create receipt document
       await this.db.collection('receipts').doc(receiptId).set({
         receipt_id: receiptId,
         user_id: dto.userId || 'anonymous',
@@ -50,7 +53,7 @@ export class ReceiptsService {
         hedera_anchor: null,
       });
 
-      // 3. Start async analysis
+      // 4. Start async analysis
       this.analyzeReceiptAsync(receiptId, uploadResult.secure_url, dto.anchorOnHedera);
 
       return {

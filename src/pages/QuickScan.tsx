@@ -41,16 +41,19 @@ const QuickScan = () => {
   useWebSocket({
     receiptId: uploadedReceiptId || undefined,
     onProgress: (data) => {
+      console.log('📊 Progress received in QuickScan:', data);
       updateProgress(data.progress || 0, data.status || 'Processing...');
     },
     onComplete: (data) => {
-      setResults(data.analysis);
+      console.log('✅ Analysis complete in QuickScan:', data);
+      setResults(data.data || data.analysis || data);
       completeAnalysis();
       toast.success('Analysis complete!');
     },
     onError: (error) => {
-      toast.error(error.message || 'Analysis failed');
-      useReceiptStore.getState().failAnalysis(error.message || 'Unknown error');
+      console.error('❌ WebSocket error in QuickScan:', error);
+      toast.error(error.error || error.message || 'Analysis failed');
+      useReceiptStore.getState().failAnalysis(error.error || error.message || 'Unknown error');
     },
   });
 

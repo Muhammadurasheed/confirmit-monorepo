@@ -361,10 +361,10 @@ export class BusinessService {
   async getPendingBusinesses() {
     this.logger.log('Fetching pending businesses for admin review');
 
+    // Use simple where query to avoid composite index requirement
     const snapshot = await this.db
       .collection('businesses')
-      .where('verification.status', 'in', ['pending', 'under_review'])
-      .orderBy('created_at', 'desc')
+      .where('verification.status', '==', 'pending')
       .get();
 
     const businesses = snapshot.docs.map((doc) => {

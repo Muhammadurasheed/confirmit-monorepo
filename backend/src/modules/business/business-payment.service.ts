@@ -32,7 +32,7 @@ export class BusinessPaymentService {
           amount, // Paystack expects amount in kobo
           currency: 'NGN',
           reference: `BIZ-${businessId}-${Date.now()}`,
-          callback_url: `${this.configService.get('CORS_ORIGIN')}/payment/callback`,
+          callback_url: `${this.configService.get('frontendUrl')}/payment/callback`,
           metadata: {
             business_id: businessId,
             payment_type: 'business_verification',
@@ -128,8 +128,8 @@ export class BusinessPaymentService {
           order_id: `BIZ-${businessId}-${Date.now()}`,
           order_description: `Business Verification Payment - ${businessId}`,
           ipn_callback_url: `${this.configService.get('API_BASE_URL')}/business/payment/nowpayments/callback`,
-          success_url: `${this.configService.get('CORS_ORIGIN')}/business/payment/success`,
-          cancel_url: `${this.configService.get('CORS_ORIGIN')}/business/payment/cancel`,
+          success_url: `${this.configService.get('frontendUrl')}/business/payment/success`,
+          cancel_url: `${this.configService.get('frontendUrl')}/business/payment/cancel`,
         },
         {
           headers: {

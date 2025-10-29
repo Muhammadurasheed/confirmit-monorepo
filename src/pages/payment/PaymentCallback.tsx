@@ -92,11 +92,19 @@ const PaymentCallback = () => {
           let bizId = businessId;
           
           if (!bizId && paymentMethod === 'paystack') {
-            // Try to get businessId from the reference format: BIZ-{businessId}-{timestamp}
-            const refParts = reference.split('-');
-            if (refParts.length >= 2 && refParts[0] === 'BIZ') {
-              // Extract businessId from reference like "BIZ-MHBNZECR4NKMDP4-1730179736957"
-              bizId = `BIZ-${refParts[1]}`;
+            // Extract businessId from reference. Reference format is:
+            // "BIZ-${businessId}-${timestamp}" and businessId itself starts with "BIZ-"
+            // Example: BIZ-BIZ-MHBNZECR4NKMDP4-1730179736957
+            const match = reference.match(/BIZ-(BIZ-[A-Z0-9]+)/i);
+            if (match && match[1]) {
+              bizId = match[1];
+            } else {
+              // Fallback: split and reconstruct
+              const parts = reference.split('-');
+              const bizIndex = parts.findIndex(p => p.toUpperCase() === 'BIZ');
+              if (bizIndex !== -1 && parts[bizIndex + 1]) {
+                bizId = `BIZ-${parts[bizIndex + 1]}`;
+              }
             }
           }
           

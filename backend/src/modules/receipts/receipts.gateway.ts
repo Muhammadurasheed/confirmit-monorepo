@@ -43,8 +43,10 @@ export class ReceiptsGateway
   @SubscribeMessage('subscribe')
   handleSubscribe(client: Socket, receiptId: string) {
     client.join(receiptId);
-    // Only log subscription, not connection churn
     this.logger.debug(`Client ${client.id} subscribed to receipt ${receiptId}`);
+    
+    // Send acknowledgment back to client
+    client.emit('subscribed', { receiptId, timestamp: new Date().toISOString() });
   }
 
   emitProgress(receiptId: string, progress: number, status: string, message?: string) {
