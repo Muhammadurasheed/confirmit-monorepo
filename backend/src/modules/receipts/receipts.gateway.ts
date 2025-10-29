@@ -47,13 +47,15 @@ export class ReceiptsGateway
     this.logger.debug(`Client ${client.id} subscribed to receipt ${receiptId}`);
   }
 
-  emitProgress(receiptId: string, progress: number, status: string, p0: string) {
+  emitProgress(receiptId: string, progress: number, status: string, message?: string) {
     this.server.to(receiptId).emit('progress', {
       receipt_id: receiptId,
       progress,
       status,
+      message: message || status,
       timestamp: new Date().toISOString(),
     });
+    this.logger.debug(`📊 Progress emitted to ${receiptId}: ${progress}% - ${status}`);
   }
 
   emitComplete(receiptId: string, data: any) {

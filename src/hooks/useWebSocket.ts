@@ -14,9 +14,10 @@ export const useWebSocket = ({ receiptId, onProgress, onComplete, onError }: Use
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   const connect = useCallback(() => {
-    if (!receiptId || socketRef.current) return;
+    if (!receiptId || socketRef.current || hasInitialized) return;
 
     console.log(`🔌 Connecting to WebSocket: ${WS_BASE_URL}/receipts`);
 
@@ -35,6 +36,7 @@ export const useWebSocket = ({ receiptId, onProgress, onComplete, onError }: Use
       console.log('✅ WebSocket connected:', socket.id);
       setIsConnected(true);
       setReconnectAttempt(0);
+      setHasInitialized(true);
       
       // Subscribe to receipt updates
       socket.emit('subscribe', receiptId);
@@ -92,13 +94,16 @@ export const useWebSocket = ({ receiptId, onProgress, onComplete, onError }: Use
       socketRef.current.disconnect();
       socketRef.current = null;
       setIsConnected(false);
+      setHasInitialized(false);
     }
   }, []);
 
   useEffect(() => {
-    connect();
+    if (receiptId && !hasInitialized) {
+      connect();
+    }
     return () => disconnect();
-  }, [connect, disconnect]);
+  }, [receiptId, hasInitialized, connect, disconnect]);
 
   return { 
     connect, 

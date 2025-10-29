@@ -35,7 +35,7 @@ export class ReceiptsService {
 
     try {
       // 1. Upload to Cloudinary
-      this.receiptsGateway.emitProgress(receiptId, 10, 'upload_complete', 'Uploading image...');
+      this.receiptsGateway.emitProgress(receiptId, 10, 'upload_complete', 'Image uploaded successfully');
       const uploadResult = await this.uploadToCloudinary(file);
 
       // 2. Create receipt document
