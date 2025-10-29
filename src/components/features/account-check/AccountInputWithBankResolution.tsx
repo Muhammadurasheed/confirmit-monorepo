@@ -46,12 +46,15 @@ export const AccountInputWithBankResolution = ({
   const bankCode = form.watch("bankCode");
   const accountName = form.watch("accountName");
 
-  const handleResolveAccount = async () => {
-    if (!accountNumber || !bankCode) {
+  const handleResolveAccount = async (accNum?: string, bnkCode?: string) => {
+    const accountNum = accNum || accountNumber;
+    const bankCd = bnkCode || bankCode;
+    
+    if (!accountNum || !bankCd) {
       return;
     }
 
-    if (accountNumber.length !== 10) {
+    if (accountNum.length !== 10) {
       return;
     }
 
@@ -59,7 +62,10 @@ export const AccountInputWithBankResolution = ({
     setIsResolved(false);
 
     try {
-      const result = await paystackService.resolveAccountNumber({ accountNumber, bankCode });
+      const result = await paystackService.resolveAccountNumber({ 
+        accountNumber: accountNum, 
+        bankCode: bankCd 
+      });
       
       if (result.success && result.data?.account_name) {
         form.setValue("accountName", result.data.account_name);
@@ -94,7 +100,7 @@ export const AccountInputWithBankResolution = ({
     
     // Auto-resolve if bank is already selected and account is 10 digits
     if (value.length === 10 && bankCode) {
-      setTimeout(() => handleResolveAccount(), 300);
+      setTimeout(() => handleResolveAccount(value, bankCode), 500);
     }
   };
 
@@ -105,7 +111,7 @@ export const AccountInputWithBankResolution = ({
     
     // Auto-resolve if account is already 10 digits
     if (accountNumber.length === 10) {
-      setTimeout(() => handleResolveAccount(), 300);
+      setTimeout(() => handleResolveAccount(accountNumber, value), 500);
     }
   };
 

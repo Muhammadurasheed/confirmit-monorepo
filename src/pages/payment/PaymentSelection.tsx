@@ -115,18 +115,20 @@ const PaymentSelection = () => {
         cryptocurrency: crypto,
       });
 
-      if (response.invoice_url) {
-        // Redirect to NOWPayments hosted invoice
+      if (response.success && response.invoice_url) {
+        // Store invoice/payment ID for callback verification
+        if (response.invoice_id) {
+          sessionStorage.setItem('nowpayments_invoice_id', response.invoice_id);
+        }
+        // Redirect to NOWPayments hosted invoice page
         window.location.href = response.invoice_url;
-      } else if (response.method === 'manual_hedera') {
-        // Manual payment fallback
-        navigate(`/payment/manual?businessId=${businessId}&address=${response.payment_address}&amount=${response.amount_usdt}`);
       } else {
-        throw new Error("Failed to initialize crypto payment");
+        throw new Error("Failed to initialize crypto payment. Please try again or contact support.");
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Crypto payment initialization failed");
       setPaymentStatus('failed');
+      setShowCryptoSelector(false);
     } finally {
       setIsLoading(false);
     }

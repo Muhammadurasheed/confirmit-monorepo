@@ -19,13 +19,14 @@ const PaymentCallback = () => {
   
   // Extract payment reference from URL
   const paystackReference = searchParams.get('reference') || searchParams.get('trxref');
-  const nowpaymentsId = searchParams.get('payment_id');
+  const nowpaymentsInvoiceId = searchParams.get('invoice_id') || searchParams.get('payment_id');
+  const paymentStatus = searchParams.get('payment_status'); // NOWPayments sends this
 
   useEffect(() => {
     const verifyPayment = async () => {
       // Determine payment method and reference
       const paymentMethod = paystackReference ? 'paystack' : 'nowpayments';
-      const reference = paystackReference || nowpaymentsId;
+      const reference = paystackReference || nowpaymentsInvoiceId;
       
       if (!reference) {
         toast.error("No payment reference found");
@@ -44,24 +45,73 @@ const PaymentCallback = () => {
       setPaymentStatus('confirming');
 
       try {
-        const response = await paymentService.verifyPayment({
-          businessId,
-          paymentMethod,
-          reference,
-        });
-
-        if (response.success) {
-          setPaymentData(response.payment);
-          setVerificationStatus('success');
-          setPaymentStatus('success');
-          toast.success("Payment verified successfully!");
+        // For NOWPayments, if status is not 'finished', start polling
+        if (paymentMethod === 'nowpayments' && paymentStatus !== 'finished') {
+          // Poll for payment status
+          let attempts = 0;
+          const maxAttempts = 60; // Poll for up to 5 minutes (60 * 5 seconds)
           
-          // Redirect to dashboard after 5 seconds
-          setTimeout(() => {
-            navigate(`/business/dashboard/${businessId}`);
-          }, 5000);
+          const pollStatus = async () => {
+            try {
+              const statusResponse = await paymentService.getPaymentStatus(businessId);
+              
+              if (statusResponse.status === 'completed' || statusResponse.status === 'finished') {
+                // Verify the payment
+                const verifyResponse = await paymentService.verifyPayment({
+                  businessId,
+                  paymentMethod,
+                  reference,
+                });
+                
+                if (verifyResponse.success) {
+                  setPaymentData(verifyResponse.payment);
+                  setVerificationStatus('success');
+                  setPaymentStatus('success');
+                  toast.success("Crypto payment confirmed on blockchain!");
+                  
+                  setTimeout(() => {
+                    navigate(`/business/dashboard/${businessId}`);
+                  }, 5000);
+                }
+                return true;
+              } else if (statusResponse.status === 'failed' || statusResponse.status === 'expired') {
+                throw new Error("Payment failed or expired");
+              }
+              
+              // Continue polling
+              attempts++;
+              if (attempts < maxAttempts) {
+                setTimeout(pollStatus, 5000);
+              } else {
+                throw new Error("Payment confirmation timeout. Please contact support.");
+              }
+            } catch (error) {
+              console.error("Polling error:", error);
+              throw error;
+            }
+          };
+          
+          await pollStatus();
         } else {
-          throw new Error(response.message || "Payment verification failed");
+          // Direct verification for Paystack or completed NOWPayments
+          const response = await paymentService.verifyPayment({
+            businessId,
+            paymentMethod,
+            reference,
+          });
+
+          if (response.success) {
+            setPaymentData(response.payment);
+            setVerificationStatus('success');
+            setPaymentStatus('success');
+            toast.success("Payment verified successfully!");
+            
+            setTimeout(() => {
+              navigate(`/business/dashboard/${businessId}`);
+            }, 5000);
+          } else {
+            throw new Error(response.message || "Payment verification failed");
+          }
         }
       } catch (error) {
         console.error("Payment verification error:", error);
@@ -69,7 +119,6 @@ const PaymentCallback = () => {
         setVerificationStatus('failed');
         setPaymentStatus('failed');
         
-        // Redirect back after failure
         setTimeout(() => {
           navigate(`/payment?businessId=${businessId}&tier=${tier}`);
         }, 3000);
@@ -77,7 +126,7 @@ const PaymentCallback = () => {
     };
 
     verifyPayment();
-  }, [paystackReference, nowpaymentsId, businessId, tier, setPaymentStatus, navigate]);
+  }, [paystackReference, nowpaymentsInvoiceId, paymentStatus, businessId, tier, setPaymentStatus, navigate]);
 
   const getDisplayAmount = () => {
     if (!paymentData) return '';
@@ -105,7 +154,7 @@ const PaymentCallback = () => {
           {verificationStatus === 'success' && paymentData && (
             <PaymentSuccess
               amount={getDisplayAmount()}
-              reference={paystackReference || nowpaymentsId || ''}
+              reference={paystackReference || nowpaymentsInvoiceId || ''}
               paymentMethod={paystackReference ? 'Paystack' : 'Crypto'}
               businessId={businessId || ''}
               transactionHash={paymentData.txn_id || paymentData.transaction}
