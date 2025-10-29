@@ -297,7 +297,7 @@ const BusinessProfile = () => {
               </Card>
 
               {/* Bank Account (if verified) */}
-              {business.bankAccount.verified && (
+              {business.bankAccount?.verified && (
                 <Card className="shadow-elegant border-success/20">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -390,7 +390,7 @@ const BusinessProfile = () => {
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-muted-foreground">Bank Account Verified</span>
                       <span className="font-medium">
-                        {business.bankAccount.verified ? '✅ Verified' : '❌ Not Verified'}
+                        {business.bankAccount?.verified ? '✅ Verified' : '❌ Not Verified'}
                       </span>
                     </div>
                   </div>

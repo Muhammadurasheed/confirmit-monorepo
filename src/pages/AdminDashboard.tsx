@@ -70,6 +70,13 @@ export default function AdminDashboard() {
     }
   }, [user, authLoading, navigate]);
 
+  // Refetch when tab changes
+  useEffect(() => {
+    if (user) {
+      fetchBusinesses();
+    }
+  }, [activeTab]);
+
   const fetchBusinesses = async () => {
     try {
       setLoading(true);
