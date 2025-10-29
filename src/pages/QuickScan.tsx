@@ -46,7 +46,12 @@ const QuickScan = () => {
     },
     onComplete: (data) => {
       console.log('✅ Analysis complete in QuickScan:', data);
-      setResults(data.data || data.analysis || data);
+      console.log('📦 Data structure:', JSON.stringify(data, null, 2));
+      
+      const analysisData = data.data || data.analysis || data;
+      console.log('📊 Extracted analysis data:', JSON.stringify(analysisData, null, 2));
+      
+      setResults(analysisData);
       completeAnalysis();
       toast.success('Analysis complete!');
     },
@@ -282,19 +287,19 @@ const QuickScan = () => {
                 {/* Results */}
                 <ResultsDisplay
                   receiptId={currentReceipt.receiptId}
-                  trustScore={results.trustScore}
-                  verdict={results.verdict}
-                  issues={results.issues}
-                  recommendation={results.recommendation}
+                  trustScore={results.trustScore || 0}
+                  verdict={results.verdict || 'unclear'}
+                  issues={results.issues || []}
+                  recommendation={results.recommendation || 'Analysis completed. Review the details below.'}
                   forensicDetails={{
-                    ocr_confidence: results.forensicDetails?.ocrConfidence || 0,
-                    manipulation_score: results.forensicDetails?.manipulationScore || 0,
-                    metadata_flags: results.forensicDetails?.metadataFlags || [],
+                    ocr_confidence: (results.forensicDetails?.ocrConfidence || (results.forensicDetails as any)?.ocr_confidence || 0) as number,
+                    manipulation_score: (results.forensicDetails?.manipulationScore || (results.forensicDetails as any)?.manipulation_score || 0) as number,
+                    metadata_flags: (results.forensicDetails?.metadataFlags || (results.forensicDetails as any)?.metadata_flags || []) as string[],
                   }}
                   merchant={results.merchant ? {
                     name: results.merchant.name,
                     verified: results.merchant.verified,
-                    trust_score: results.merchant.trustScore,
+                    trust_score: (results.merchant.trustScore || (results.merchant as any).trust_score || 0) as number,
                   } : undefined}
                   hederaAnchor={currentReceipt.hederaAnchor ? {
                     transaction_id: currentReceipt.hederaAnchor.transactionId,

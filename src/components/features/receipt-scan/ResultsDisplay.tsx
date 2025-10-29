@@ -69,7 +69,7 @@ export const ResultsDisplay = ({
   receiptId,
   trustScore,
   verdict,
-  issues,
+  issues = [],
   recommendation,
   forensicDetails,
   merchant,
@@ -78,6 +78,17 @@ export const ResultsDisplay = ({
   const [showReportModal, setShowReportModal] = useState(false);
   const [showForensicModal, setShowForensicModal] = useState(false);
   const [showHederaModal, setShowHederaModal] = useState(false);
+
+  // Defensive checks and data validation
+  const safeIssues = Array.isArray(issues) ? issues : [];
+  const safeForensicDetails = forensicDetails || {
+    ocr_confidence: 0,
+    manipulation_score: 0,
+    metadata_flags: [],
+  };
+  const safeMetadataFlags = Array.isArray(safeForensicDetails.metadata_flags) 
+    ? safeForensicDetails.metadata_flags 
+    : [];
 
   // Normalize verdict to ensure it matches verdictConfig keys
   const normalizedVerdict = verdict?.toLowerCase() as keyof typeof verdictConfig;
@@ -130,11 +141,11 @@ export const ResultsDisplay = ({
       </Card>
 
       {/* Issues */}
-      {issues.length > 0 && (
+      {safeIssues.length > 0 && (
         <Card className="p-6">
-          <h3 className="font-semibold mb-4">Detected Issues ({issues.length})</h3>
+          <h3 className="font-semibold mb-4">Detected Issues ({safeIssues.length})</h3>
           <div className="space-y-3">
-            {issues.map((issue, index) => (
+            {safeIssues.map((issue, index) => (
               <div key={index} className="flex gap-3 p-3 rounded-lg bg-muted/50">
                 <Badge variant={issue.severity === 'high' ? 'destructive' : issue.severity === 'medium' ? 'default' : 'secondary'}>
                   {issue.severity}
@@ -179,23 +190,23 @@ export const ResultsDisplay = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">OCR Confidence</p>
-                  <p className="text-2xl font-bold">{forensicDetails.ocr_confidence}%</p>
+                  <p className="text-2xl font-bold">{safeForensicDetails.ocr_confidence}%</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Manipulation Score</p>
-                  <p className="text-2xl font-bold">{forensicDetails.manipulation_score}%</p>
+                  <p className="text-2xl font-bold">{safeForensicDetails.manipulation_score}%</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Metadata Flags</p>
-                  <p className="text-2xl font-bold">{forensicDetails.metadata_flags.length}</p>
+                  <p className="text-2xl font-bold">{safeMetadataFlags.length}</p>
                 </div>
               </div>
               
-              {forensicDetails.metadata_flags.length > 0 && (
+              {safeMetadataFlags.length > 0 && (
                 <div>
                   <p className="text-sm font-medium mb-2">Metadata Findings:</p>
                   <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                    {forensicDetails.metadata_flags.map((flag, index) => (
+                    {safeMetadataFlags.map((flag, index) => (
                       <li key={index}>{flag}</li>
                     ))}
                   </ul>

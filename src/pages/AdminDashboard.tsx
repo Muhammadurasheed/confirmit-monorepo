@@ -80,15 +80,26 @@ export default function AdminDashboard() {
           ? `${API_ENDPOINTS.ADMIN_BUSINESSES}/pending`
           : `${API_ENDPOINTS.ADMIN_BUSINESSES}/all`;
 
+      console.log('🔍 Fetching businesses from:', endpoint);
+
       const response = await fetch(endpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!response.ok) throw new Error("Failed to fetch businesses");
+      console.log('📡 Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Response error:', errorText);
+        throw new Error("Failed to fetch businesses");
+      }
 
       const data = await response.json();
+      console.log('📦 Received data:', data);
+      console.log('👥 Businesses count:', data.data?.length || 0);
+      
       setBusinesses(data.data || []);
     } catch (error) {
       console.error("Fetch error:", error);
@@ -122,7 +133,17 @@ export default function AdminDashboard() {
       if (!response.ok) throw new Error("Approval failed");
 
       const result = await response.json();
-      toast.success(`Business approved! Trust ID NFT #${result.nft.serial_number} minted.`);
+      
+      // Handle both success cases: with or without NFT
+      if (result.nft?.serial_number) {
+        toast.success(`Business approved! Trust ID NFT #${result.nft.serial_number} minted.`);
+      } else {
+        toast.success('Business approved successfully!');
+        if (result.warning) {
+          toast.warning(result.warning);
+        }
+      }
+      
       setShowApproveDialog(false);
       setSelectedBusiness(null);
       fetchBusinesses();
