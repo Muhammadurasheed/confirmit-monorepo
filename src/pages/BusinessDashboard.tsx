@@ -126,7 +126,9 @@ const BusinessDashboard = () => {
     toast.success("Embed code copied! Paste it in your website.");
   };
 
-  const daysActive = business ? Math.floor((Date.now() - new Date(business.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  const daysActive = business?.createdAt 
+    ? Math.floor((Date.now() - new Date(business.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
 
   const getVerificationStatusColor = (status: string) => {
     switch (status) {
@@ -322,7 +324,7 @@ const BusinessDashboard = () => {
                   <Button
                     variant="outline"
                     className="justify-start"
-                    onClick={() => window.open(`/business/profile/${id}`, '_blank')}
+                    onClick={() => window.open(`/business/${id}`, '_blank')}
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
                     View Public Profile
@@ -353,7 +355,7 @@ const BusinessDashboard = () => {
                     <Star className="h-4 w-4 text-warning" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">{business?.trustScore || 0}<span className="text-lg text-muted-foreground">/100</span></div>
+                    <div className="text-3xl font-bold text-foreground">{business?.trustScore || 0}<span className="text-lg text-muted-foreground">/100</span></div>
                     <p className="text-xs text-success mt-1">
                       +15% this month
                     </p>
@@ -366,7 +368,7 @@ const BusinessDashboard = () => {
                     <Eye className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">{stats?.profileViews || 0}</div>
+                    <div className="text-3xl font-bold text-foreground">{stats?.profileViews || 0}</div>
                     <p className="text-xs text-muted-foreground mt-1">
                       Total views
                     </p>
@@ -379,7 +381,7 @@ const BusinessDashboard = () => {
                     <Shield className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">{stats?.verifications || 0}</div>
+                    <div className="text-3xl font-bold text-foreground">{stats?.verifications || 0}</div>
                     <p className="text-xs text-muted-foreground mt-1">
                       Successful checks
                     </p>
@@ -392,7 +394,7 @@ const BusinessDashboard = () => {
                     <Clock className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">{daysActive}</div>
+                    <div className="text-3xl font-bold text-foreground">{daysActive}</div>
                     <p className="text-xs text-muted-foreground mt-1">
                       Since registration
                     </p>
