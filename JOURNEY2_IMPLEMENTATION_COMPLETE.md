@@ -19,7 +19,8 @@ Successfully implemented a community-powered, production-ready account verificat
 ```
 Firestore:
 ├── demo_accounts/          ✅ Demo account metadata
-├── demo_fraud_reports/     ✅ Demo fraud reports  
+├── demo_fraud_reports/     ✅ Demo
+``````````````````````````````````fraud reports  
 ├── demo_businesses/        ✅ Demo verified businesses
 ├── demo_reviews/           ✅ Demo business reviews
 ├── accounts/               ✅ Real production accounts
