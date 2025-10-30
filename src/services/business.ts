@@ -12,6 +12,7 @@ export interface RegisterBusinessData {
   bankCode: string;
   accountName: string;
   tier: number;
+  userId?: string; // Link business to user
   documents: {
     cacCertificate?: string;
     governmentId?: string;

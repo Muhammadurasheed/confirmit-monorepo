@@ -21,6 +21,7 @@ const Header = () => {
 
   const navItems = [
     { name: "QuickScan", path: "/quick-scan" },
+    { name: "Scan History", path: "/scan-history" },
     { name: "Account Check", path: "/account-check" },
     { name: "Business", path: "/business" },
     { name: "API", path: "/api" },
@@ -79,7 +80,7 @@ const Header = () => {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/business/dashboard" className="cursor-pointer">
+                  <Link to="/my-business" className="cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
                     My Dashboard
                   </Link>
@@ -155,7 +156,7 @@ const Header = () => {
                       </div>
                     </div>
                     <Button variant="ghost" asChild onClick={() => setMobileOpen(false)}>
-                      <Link to="/business/dashboard">
+                      <Link to="/my-business">
                         <User className="mr-2 h-4 w-4" />
                         My Dashboard
                       </Link>

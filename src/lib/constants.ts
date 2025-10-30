@@ -50,6 +50,7 @@ export const UPLOAD_LIMITS = {
 // API Endpoints
 // Note: API_BASE_URL already includes /api, don't add it again
 export const API_ENDPOINTS = {
+  BASE: API_BASE_URL,
   SCAN_RECEIPT: `${API_BASE_URL}/receipts/scan`,
   CHECK_ACCOUNT: `${API_BASE_URL}/accounts/check`,
   RESOLVE_ACCOUNT: `${API_BASE_URL}/accounts/resolve`,

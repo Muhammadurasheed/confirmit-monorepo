@@ -25,6 +25,12 @@ export class BusinessController {
     return this.businessService.getDirectory(query);
   }
 
+  @Get('my-businesses')
+  @ApiOperation({ summary: 'Get businesses owned by user' })
+  async getMyBusinesses(@Query('userId') userId: string) {
+    return this.businessService.getBusinessesByUserId(userId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get business profile' })
   async getBusiness(@Param('id') id: string) {

@@ -51,6 +51,7 @@ export class BusinessService {
           successful_transactions: 0,
         },
         api_keys: [],
+        created_by: data.userId || null, // Link business to user
         created_at: admin.firestore.FieldValue.serverTimestamp(),
       };
 
@@ -205,6 +206,31 @@ export class BusinessService {
       api_key: apiKey,
       message: 'API key generated. Store it securely - it will not be shown again.',
     };
+  }
+
+  async getBusinessesByUserId(userId: string) {
+    this.logger.log(`Fetching businesses for user: ${userId}`);
+
+    try {
+      const snapshot = await this.db
+        .collection('businesses')
+        .where('created_by', '==', userId)
+        .orderBy('created_at', 'desc')
+        .get();
+
+      const businesses = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return {
+        success: true,
+        data: businesses,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to fetch businesses: ${error.message}`);
+      throw error;
+    }
   }
 
   async getBusinessStats(businessId: string) {

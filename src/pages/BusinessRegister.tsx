@@ -19,6 +19,7 @@ import { registerBusiness } from "@/services/business";
 import { Building2, CheckCircle2, Loader2 } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { BUSINESS_TIERS } from "@/lib/constants";
+import { useAuth } from "@/hooks/useAuth";
 
 const steps = [
   { id: 1, title: "Basic Information", description: "Tell us about your business" },
@@ -55,6 +56,7 @@ export type BusinessFormData = z.infer<typeof businessSchema>;
 
 const BusinessRegister = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [showTierSelector, setShowTierSelector] = useState(true);
   const [selectedTier, setSelectedTier] = useState<1 | 2 | 3 | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -124,6 +126,7 @@ const BusinessRegister = () => {
         bankCode: data.bankCode,
         accountName: data.accountName,
         tier: parseInt(data.tier),
+        userId: user?.uid, // Link business to authenticated user
         documents: {
           cacCertificate: data.cacCertificate,
           governmentId: data.governmentId,
