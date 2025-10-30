@@ -9,6 +9,13 @@ export interface CheckAccountRequest {
 export interface FraudReport {
   total: number;
   recent_30_days: number;
+  details?: Array<{
+    category: string;
+    description_summary: string;
+    severity: string;
+    reported_at: Date;
+    verified: boolean;
+  }>;
   categories?: {
     type: string;
     count: number;

@@ -82,9 +82,10 @@ const AccountCheck = () => {
           fraudReports={{
             total: data.checks.fraud_reports.total,
             recent_30_days: data.checks.fraud_reports.recent_30_days,
+            details: data.checks.fraud_reports.details,
           }}
           checkCount={data.checks.check_count}
-          proceedRate={0.09} // Calculate from backend data if available
+          proceedRate={0.09}
           flags={data.checks.flags}
           isVerifiedBusiness={isVerifiedBusiness}
           businessName={data.verified_business?.name}

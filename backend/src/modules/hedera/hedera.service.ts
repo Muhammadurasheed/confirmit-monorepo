@@ -171,15 +171,16 @@ export class HederaService {
         type: 'Trust_ID_Certificate',
       };
 
+      const network = this.configService.get('hedera.network');
+      
       const nftData = {
         token_id: tokenId.toString(),
         serial_number: serialNumber.toString(),
         business_id: businessId,
         metadata: fullMetadata, // Store full metadata in Firestore
         mint_transaction_id: mintTx.transactionId.toString(),
-        // Correct Hedera NFT explorer URL - just the token page
-        // User can navigate to specific serial within the token page
-        explorer_url: `https://hashscan.io/${this.configService.get('hedera.network')}/token/${tokenId}`,
+        // Hedera NFT explorer URL with serial number path
+        explorer_url: `https://hashscan.io/${network}/token/${tokenId}/${serialNumber}`,
         minted_at: admin.firestore.FieldValue.serverTimestamp(),
       };
 

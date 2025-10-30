@@ -21,7 +21,7 @@ const Header = () => {
 
   const navItems = [
     { name: "QuickScan", path: "/quick-scan" },
-    { name: "Scan History", path: "/scan-history" },
+    { name: "Activity History", path: "/activity-history" },
     { name: "Account Check", path: "/account-check" },
     { name: "Report Fraud", path: "/report-fraud" },
     { name: "Business", path: "/business" },

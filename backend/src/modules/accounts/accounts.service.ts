@@ -402,10 +402,11 @@ export class AccountsService {
           patterns.add(this.extractPattern(data.description));
         }
 
-        // Anonymized report details
+        // Anonymized report details with FULL description
         reports.push({
           id: doc.id,
           category: data.category,
+          description: data.description || data.description_summary || '',
           description_summary: data.description_summary || data.description?.substring(0, 100),
           severity: data.severity,
           pattern: this.extractPattern(data.description),

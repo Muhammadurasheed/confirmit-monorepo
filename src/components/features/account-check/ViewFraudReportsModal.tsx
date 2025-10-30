@@ -9,6 +9,7 @@ import { toast } from "sonner";
 interface FraudReport {
   id: string;
   category: string;
+  description: string;
   severity: 'low' | 'medium' | 'high';
   pattern: string;
   reported_at: string;
@@ -152,7 +153,9 @@ export const ViewFraudReportsModal = ({ open, onOpenChange, accountNumber, repor
                         </span>
                       </div>
                       <p className="font-medium mb-1">{report.category}</p>
-                      <p className="text-sm text-muted-foreground">{report.pattern}</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {report.description || report.pattern}
+                      </p>
                       {report.verified && (
                         <Badge variant="outline" className="mt-2">
                           Verified Report
