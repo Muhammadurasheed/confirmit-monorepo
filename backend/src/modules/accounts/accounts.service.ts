@@ -171,8 +171,8 @@ export class AccountsService {
         let verifiedBusiness = null;
         const businessSnapshot = await this.db
           .collection('businesses')
-          .where('account_number_hash', '==', accountHash)
-          .where('verification_status', '==', 'approved')
+          .where('bank_account.number_encrypted', '==', accountHash)
+          .where('verification.verified', '==', true)
           .limit(1)
           .get();
 

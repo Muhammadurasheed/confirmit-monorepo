@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { AlertTriangle, Flag, TrendingDown, Clock, Users, ExternalLink } from "lucide-react";
+import { AlertTriangle, Flag, TrendingDown, Clock, Users, ExternalLink, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,8 @@ interface HighRiskResultProps {
   checkCount: number;
   proceedRate?: number;
   flags: string[];
+  isVerifiedBusiness?: boolean;
+  businessName?: string;
   onReportFraud: () => void;
 }
 
@@ -45,6 +47,8 @@ export const HighRiskResult = ({
   checkCount,
   proceedRate = 0,
   flags,
+  isVerifiedBusiness = false,
+  businessName,
   onReportFraud,
 }: HighRiskResultProps) => {
   const [showReportsModal, setShowReportsModal] = useState(false);
@@ -165,6 +169,20 @@ export const HighRiskResult = ({
                   ))}
                 </ul>
               </div>
+            )}
+
+            {/* Verified Business Status */}
+            {isVerifiedBusiness && (
+              <Alert className="border-primary bg-primary/5">
+                <Shield className="h-4 w-4 text-primary" />
+                <AlertDescription className="ml-2">
+                  <strong className="text-primary">Verified Business Account</strong>
+                  <p className="mt-1 text-sm">
+                    This account belongs to <strong>{businessName}</strong>, a verified business on ConfirmIT.
+                    However, it has recent fraud reports that require investigation.
+                  </p>
+                </AlertDescription>
+              </Alert>
             )}
 
             {/* Account Activity */}

@@ -13,7 +13,7 @@ import BusinessDashboard from "./pages/BusinessDashboard";
 import BusinessDirectory from "./pages/BusinessDirectory";
 import BusinessProfile from "./pages/BusinessProfile";
 import MyBusiness from "./pages/MyBusiness";
-import ScanHistory from "./pages/ScanHistory";
+import ActivityHistory from "./pages/ActivityHistory";
 import AdminDashboard from "./pages/AdminDashboard";
 import API from "./pages/API";
 import Login from "./pages/Login";
@@ -34,7 +34,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/quick-scan" element={<QuickScan />} />
-          <Route path="/scan-history" element={<ScanHistory />} />
+          <Route path="/scan-history" element={<ActivityHistory />} />
+          <Route path="/activity-history" element={<ActivityHistory />} />
           <Route path="/account-check" element={<AccountCheck />} />
           <Route path="/report-fraud" element={<ReportFraud />} />
           <Route path="/business" element={<Business />} />

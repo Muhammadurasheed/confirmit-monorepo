@@ -31,7 +31,7 @@ export class BusinessService {
           address: data.address,
         },
         bank_account: {
-          number_encrypted: this.encryptData(data.accountNumber),
+          number_encrypted: this.hashAccountNumber(data.accountNumber),
           bank_code: data.bankCode,
           account_name: data.accountName,
           verified: false,
@@ -259,6 +259,11 @@ export class BusinessService {
 
   private generateSecureApiKey(): string {
     return `ck_${crypto.randomBytes(32).toString('hex')}`;
+  }
+
+  private hashAccountNumber(accountNumber: string): string {
+    // Use SHA-256 hashing - MUST match accounts.service.ts
+    return crypto.createHash('sha256').update(accountNumber).digest('hex');
   }
 
   private encryptData(data: string): string {

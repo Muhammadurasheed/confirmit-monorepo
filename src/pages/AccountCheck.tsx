@@ -86,6 +86,8 @@ const AccountCheck = () => {
           checkCount={data.checks.check_count}
           proceedRate={0.09} // Calculate from backend data if available
           flags={data.checks.flags}
+          isVerifiedBusiness={isVerifiedBusiness}
+          businessName={data.verified_business?.name}
           onReportFraud={handleReportFraud}
         />
       );
