@@ -27,6 +27,29 @@ service cloud.firestore {
       allow read: if resource.data.user_id == 'anonymous';
     }
     
+    // Account Checks collection - users can read their own account check history
+    match /account_checks/{checkId} {
+      allow read: if request.auth != null && 
+                     (resource.data.user_id == request.auth.uid || 
+                      resource.data.user_id == 'anonymous');
+      allow write: if request.auth != null && 
+                      request.resource.data.user_id == request.auth.uid;
+      
+      // Allow anonymous users to read their own checks
+      allow read: if resource.data.user_id == 'anonymous';
+    }
+    
+    // Fraud Reports collections - public read for verification, authenticated write
+    match /fraud_reports/{reportId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+    }
+    
+    match /demo_fraud_reports/{reportId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+    }
+    
     // Businesses collection
     match /businesses/{businessId} {
       // Anyone can read businesses (public directory)
@@ -88,7 +111,7 @@ https://console.firebase.google.com/v1/r/project/confirmit-8e623/firestore/index
 5. Click **Create**
 
 ### Index 2: Receipts by User (user_id + created_at)
-**Required for:** Scan History (`/scan-history`)
+**Required for:** Activity History - Receipt Scans (`/activity-history`)
 
 **Manual creation:**
 1. Go to **Firestore Database** → **Indexes** → **Composite**
@@ -99,14 +122,68 @@ https://console.firebase.google.com/v1/r/project/confirmit-8e623/firestore/index
    - `created_at` - Descending
 5. Click **Create**
 
+### Index 3: Account Checks by User (user_id + created_at)
+**Required for:** Activity History - Account Checks (`/activity-history`)
+
+**Manual creation:**
+1. Go to **Firestore Database** → **Indexes** → **Composite**
+2. Click **Create Index**
+3. Collection ID: `account_checks`
+4. Add fields:
+   - `user_id` - Ascending
+   - `created_at` - Descending
+5. Click **Create**
+
+### Index 4: Fraud Reports by Account Hash (account_hash + reported_at)
+**Required for:** View Fraud Reports Modal
+
+**Auto-create link (click when you get the error):**
+When you click "View Reports" and get an index error, click the link in the error message to auto-create this index.
+
+**Manual creation:**
+1. Go to **Firestore Database** → **Indexes** → **Composite**
+2. Click **Create Index**
+3. Collection ID: `fraud_reports`
+4. Add fields:
+   - `account_hash` - Ascending
+   - `reported_at` - Descending
+5. Click **Create**
+
+### Index 5: Demo Fraud Reports by Account Hash (account_hash + reported_at)
+**Required for:** View Demo Fraud Reports Modal
+
+**Manual creation:**
+1. Go to **Firestore Database** → **Indexes** → **Composite**
+2. Click **Create Index**
+3. Collection ID: `demo_fraud_reports`
+4. Add fields:
+   - `account_hash` - Ascending
+   - `reported_at` - Descending
+5. Click **Create**
+
+### Index 6: Businesses by Account Number (bank_account.number_encrypted + verification.verified)
+**Required for:** Account Check - Verified Business Matching
+
+**Manual creation:**
+1. Go to **Firestore Database** → **Indexes** → **Composite**
+2. Click **Create Index**
+3. Collection ID: `businesses`
+4. Add fields:
+   - `bank_account.number_encrypted` - Ascending
+   - `verification.verified` - Ascending
+5. Click **Create**
+
 ---
 
 ## 3. Verify Collections Exist
 
 Make sure these collections are created in your Firestore:
 
-- `receipts` - Stores scan history
+- `receipts` - Stores receipt scan history
+- `account_checks` - Stores account check history
 - `businesses` - Stores registered businesses
+- `fraud_reports` - Stores fraud reports (production)
+- `demo_fraud_reports` - Stores demo fraud reports (development)
 - `reviews` - Stores business reviews (optional, for future)
 
 Collections are created automatically when the first document is added, but you can create them manually:
@@ -172,11 +249,14 @@ Once these are configured, your app will:
 ---
 
 **Status Check:**
-- [ ] Firestore Security Rules published
+- [ ] Firestore Security Rules published (includes account_checks and fraud_reports)
 - [ ] Businesses index created (created_by + created_at)
 - [ ] Receipts index created (user_id + created_at)
+- [ ] Account Checks index created (user_id + created_at)
+- [ ] Fraud Reports indexes created (account_hash + reported_at)
+- [ ] Businesses account number index created (bank_account.number_encrypted + verification.verified)
 - [ ] Collections verified to exist
-- [ ] Tested scan history
+- [ ] Tested activity history (receipts and account checks)
 - [ ] Tested my business dashboard
 
 Once all items are checked, your Firebase setup is complete! 🎉
