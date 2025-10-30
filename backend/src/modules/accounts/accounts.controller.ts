@@ -5,9 +5,20 @@ import { ResolveAccountDto } from './dto/resolve-account.dto';
 import { ReportFraudDto } from './dto/report-fraud.dto';
 import { GetFraudReportsDto } from './dto/get-fraud-reports.dto';
 
+import { IsString, IsNotEmpty, IsOptional, Length } from 'class-validator';
+
 class CheckAccountDto {
+  @IsString()
+  @IsNotEmpty({ message: 'Account number is required' })
+  @Length(10, 10, { message: 'Account number must be exactly 10 digits' })
   account_number: string;
+
+  @IsString()
+  @IsOptional()
   bank_code?: string;
+
+  @IsString()
+  @IsOptional()
   business_name?: string;
 }
 

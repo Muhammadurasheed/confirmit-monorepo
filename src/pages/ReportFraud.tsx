@@ -22,10 +22,12 @@ const ReportFraud = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [reportId, setReportId] = useState<string | null>(null);
+  const [isOtherBank, setIsOtherBank] = useState(false);
 
   const [formData, setFormData] = useState({
     accountNumber: "",
     bankCode: "",
+    bankName: "",
     businessName: "",
     category: "",
     description: "",
@@ -55,6 +57,17 @@ const ReportFraud = () => {
 
     if (!formData.description || formData.description.length < 20) {
       toast.error("Please provide a detailed description (minimum 20 characters)");
+      return;
+    }
+
+    if (formData.description.length > 1000) {
+      toast.error("Description cannot exceed 1000 characters");
+      return;
+    }
+
+    // For "Other" banks, require manual bank name entry
+    if (isOtherBank && !formData.bankName?.trim()) {
+      toast.error("Please enter the bank name");
       return;
     }
 
@@ -266,9 +279,32 @@ const ReportFraud = () => {
                       <BankSearchSelect
                         value={formData.bankCode}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, bankCode: value }))}
+                        onOtherSelected={(isOther) => {
+                          setIsOtherBank(isOther);
+                          if (isOther) {
+                            setFormData(prev => ({ ...prev, bankName: "" }));
+                          }
+                        }}
                         placeholder="Select bank"
                       />
                     </div>
+
+                    {/* Manual Bank Name Input (shown when "Other" is selected) */}
+                    {isOtherBank && (
+                      <div className="space-y-2">
+                        <Label htmlFor="bankName">Enter Bank Name *</Label>
+                        <Input
+                          id="bankName"
+                          placeholder="e.g., Renmoney, VFD, etc."
+                          value={formData.bankName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, bankName: e.target.value }))}
+                          required={isOtherBank}
+                        />
+                        <p className="text-sm text-muted-foreground">
+                          Enter the exact bank name as provided
+                        </p>
+                      </div>
+                    )}
 
                     <div className="space-y-2">
                       <Label htmlFor="businessName">Business/Seller Name (Optional)</Label>
@@ -333,15 +369,21 @@ const ReportFraud = () => {
                       <Label htmlFor="description">Full Description *</Label>
                       <Textarea
                         id="description"
-                        placeholder="Describe what happened in detail. Include how you contacted the seller, what was agreed, and what went wrong. (Minimum 20 characters)"
+                        placeholder="Describe what happened in detail. Include how you contacted the seller, what was agreed, and what went wrong. (Minimum 20 characters, maximum 1000 characters)"
                         value={formData.description}
-                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value.length <= 1000) {
+                            setFormData(prev => ({ ...prev, description: value }));
+                          }
+                        }}
                         rows={6}
                         required
+                        maxLength={1000}
                         className="resize-none"
                       />
-                      <p className="text-sm text-muted-foreground">
-                        {formData.description.length}/20 characters minimum
+                      <p className={`text-sm ${formData.description.length > 1000 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                        {formData.description.length}/1000 characters {formData.description.length < 20 ? '(minimum 20)' : ''}
                       </p>
                     </div>
                   </div>
