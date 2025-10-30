@@ -69,7 +69,8 @@ const ReportFraud = () => {
       const result = await accountsService.reportFraud(
         formData.accountNumber,
         formData.category,
-        formData.description
+        formData.description,
+        formData.businessName || undefined
       );
 
       if (result.success) {

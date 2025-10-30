@@ -55,7 +55,18 @@ export const getBusiness = async (
     throw new Error(error.message || "Failed to fetch business");
   }
 
-  return response.json();
+  const result = await response.json();
+  
+  // Normalize Hedera NFT data (handle both snake_case and camelCase)
+  if (result.data?.hedera?.trust_id_nft) {
+    result.data.hedera.trustIdNft = {
+      tokenId: result.data.hedera.trust_id_nft.token_id,
+      serialNumber: result.data.hedera.trust_id_nft.serial_number,
+      explorerUrl: result.data.hedera.trust_id_nft.explorer_url,
+    };
+  }
+
+  return result;
 };
 
 export const getBusinessStats = async (businessId: string): Promise<{

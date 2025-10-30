@@ -165,6 +165,12 @@ export interface HederaInfo {
     serialNumber: string;
     explorerUrl: string;
   };
+  // Support snake_case from Firestore
+  trust_id_nft?: {
+    token_id: string;
+    serial_number: string;
+    explorer_url: string;
+  };
   walletAddress?: string;
 }
 

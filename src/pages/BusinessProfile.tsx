@@ -333,15 +333,15 @@ const BusinessProfile = () => {
             {/* Right Column - Trust ID NFT & Verification */}
             <div className="space-y-6">
               {/* Trust ID NFT */}
-              {business.hedera?.trustIdNft && (
+              {(business.hedera?.trustIdNft || business.hedera?.trust_id_nft) && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                 >
                   <TrustIdNftCard
-                    tokenId={business.hedera.trustIdNft.tokenId}
-                    serialNumber={business.hedera.trustIdNft.serialNumber}
-                    explorerUrl={business.hedera.trustIdNft.explorerUrl}
+                    tokenId={(business.hedera.trustIdNft?.tokenId || business.hedera.trust_id_nft?.token_id) as string}
+                    serialNumber={(business.hedera.trustIdNft?.serialNumber || business.hedera.trust_id_nft?.serial_number) as string}
+                    explorerUrl={(business.hedera.trustIdNft?.explorerUrl || business.hedera.trust_id_nft?.explorer_url) as string}
                     trustScore={business.trustScore}
                     verificationTier={business.verification.tier}
                     businessName={business.name}

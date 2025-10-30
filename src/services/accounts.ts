@@ -100,7 +100,12 @@ export class AccountsService {
     }
   }
 
-  async reportFraud(accountNumber: string, category: string, description: string): Promise<any> {
+  async reportFraud(
+    accountNumber: string,
+    category: string,
+    description: string,
+    businessName?: string
+  ): Promise<any> {
     try {
       const response = await fetch(`${API_BASE_URL}/accounts/report-fraud`, {
         method: 'POST',
@@ -108,7 +113,8 @@ export class AccountsService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          account_number: accountNumber,
+          accountNumber,
+          businessName,
           category,
           description,
         }),
