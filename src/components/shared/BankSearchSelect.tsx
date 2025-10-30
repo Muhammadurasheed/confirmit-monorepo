@@ -20,6 +20,7 @@ import banks from "@/data/banks.json";
 interface BankSearchSelectProps {
   value: string;
   onValueChange: (value: string) => void;
+  onOtherSelected?: (isOther: boolean) => void;
   disabled?: boolean;
   placeholder?: string;
 }
@@ -27,12 +28,14 @@ interface BankSearchSelectProps {
 export const BankSearchSelect = ({
   value,
   onValueChange,
+  onOtherSelected,
   disabled = false,
   placeholder = "Select bank",
 }: BankSearchSelectProps) => {
   const [open, setOpen] = useState(false);
 
   const selectedBank = banks.find((bank) => bank.code === value);
+  const isOther = value === "OTHER";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -56,6 +59,8 @@ export const BankSearchSelect = ({
               />
               <span>{selectedBank.name}</span>
             </div>
+          ) : isOther ? (
+            <span className="text-muted-foreground">Other (Manual Entry)</span>
           ) : (
             placeholder
           )}
@@ -74,6 +79,7 @@ export const BankSearchSelect = ({
                   value={bank.name}
                   onSelect={() => {
                     onValueChange(bank.code);
+                    onOtherSelected?.(false);
                     setOpen(false);
                   }}
                 >
@@ -94,6 +100,24 @@ export const BankSearchSelect = ({
                   <span>{bank.name}</span>
                 </CommandItem>
               ))}
+              {/* Other option for unknown banks */}
+              <CommandItem
+                value="Other (Manual Entry)"
+                onSelect={() => {
+                  onValueChange("OTHER");
+                  onOtherSelected?.(true);
+                  setOpen(false);
+                }}
+                className="border-t mt-2 pt-2"
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === "OTHER" ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <span className="font-semibold">Other (Manual Entry)</span>
+              </CommandItem>
             </CommandGroup>
           </CommandList>
         </Command>

@@ -14,6 +14,7 @@ import { BankSearchSelect } from "@/components/shared/BankSearchSelect";
 const accountSchema = z.object({
   accountNumber: z.string().regex(/^\d{10}$/, "Account number must be 10 digits"),
   bankCode: z.string().min(1, "Please select a bank"),
+  bankName: z.string().optional(), // For manual entry when "Other" is selected
   accountName: z.string().optional(),
   businessName: z.string().optional(),
 });
@@ -31,12 +32,14 @@ export const AccountInputWithBankResolution = ({
 }: AccountInputWithBankResolutionProps) => {
   const [isResolving, setIsResolving] = useState(false);
   const [isResolved, setIsResolved] = useState(false);
+  const [isOtherBank, setIsOtherBank] = useState(false);
 
   const form = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       accountNumber: "",
       bankCode: "",
+      bankName: "",
       accountName: "",
       businessName: "",
     },
@@ -85,10 +88,18 @@ export const AccountInputWithBankResolution = ({
   };
 
   const handleSubmit = (data: AccountFormData) => {
-    if (!isResolved) {
+    // For "Other" banks, skip account resolution requirement
+    if (!isOtherBank && !isResolved) {
       toast.error("Please resolve the account first");
       return;
     }
+    
+    // For "Other" banks, require manual bank name entry
+    if (isOtherBank && !data.bankName?.trim()) {
+      toast.error("Please enter the bank name");
+      return;
+    }
+    
     onSubmit(data.accountNumber, data.bankCode, data.businessName);
   };
 
@@ -109,9 +120,26 @@ export const AccountInputWithBankResolution = ({
     setIsResolved(false);
     form.setValue("accountName", "");
     
+    // Don't auto-resolve for "Other" banks
+    if (value === "OTHER") {
+      return;
+    }
+    
     // Auto-resolve if account is already 10 digits
     if (accountNumber.length === 10) {
       setTimeout(() => handleResolveAccount(accountNumber, value), 500);
+    }
+  };
+
+  const handleOtherBankSelected = (isOther: boolean) => {
+    setIsOtherBank(isOther);
+    if (isOther) {
+      // For "Other" banks, mark as resolved since we skip Paystack
+      setIsResolved(true);
+      form.setValue("accountName", "");
+      form.setValue("bankName", "");
+    } else {
+      setIsResolved(false);
     }
   };
 
@@ -129,6 +157,7 @@ export const AccountInputWithBankResolution = ({
                 <BankSearchSelect
                   value={field.value}
                   onValueChange={handleBankChange}
+                  onOtherSelected={handleOtherBankSelected}
                   disabled={isLoading || isResolving}
                   placeholder="Search and select bank"
                 />
@@ -137,6 +166,30 @@ export const AccountInputWithBankResolution = ({
             </FormItem>
           )}
         />
+
+        {/* Manual Bank Name Input (shown when "Other" is selected) */}
+        {isOtherBank && (
+          <FormField
+            control={form.control}
+            name="bankName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Enter Bank Name</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="e.g., Renmoney, VFD, etc."
+                    disabled={isLoading}
+                  />
+                </FormControl>
+                <FormMessage />
+                <p className="text-xs text-muted-foreground">
+                  Enter the exact bank name as provided
+                </p>
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* Account Number */}
         <FormField
@@ -198,7 +251,7 @@ export const AccountInputWithBankResolution = ({
           type="submit"
           size="lg"
           className="w-full"
-          disabled={isLoading || !isResolved}
+          disabled={isLoading || (!isResolved && !isOtherBank)}
         >
           {isLoading ? (
             <>
@@ -213,9 +266,15 @@ export const AccountInputWithBankResolution = ({
           )}
         </Button>
 
-        {!isResolved && accountNumber.length === 10 && bankCode && (
+        {!isOtherBank && !isResolved && accountNumber.length === 10 && bankCode && (
           <p className="text-sm text-muted-foreground text-center">
             Account resolution will happen automatically
+          </p>
+        )}
+        
+        {isOtherBank && (
+          <p className="text-sm text-warning text-center">
+            ⚠️ Account name cannot be auto-verified for unlisted banks
           </p>
         )}
       </form>
