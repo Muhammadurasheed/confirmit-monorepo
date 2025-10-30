@@ -137,6 +137,46 @@ export class AccountsService {
       throw error;
     }
   }
+
+  async saveAccountCheckToHistory(accountData: any, accountNumber: string): Promise<void> {
+    try {
+      // Import firebase dynamically to avoid circular dependencies
+      const { db, auth } = await import('@/lib/firebase');
+      
+      if (!db) {
+        // No Firebase configured, skip saving
+        return;
+      }
+
+      const { addDoc, collection } = await import('firebase/firestore');
+      
+      const userId = auth?.currentUser?.uid || 'anonymous';
+      
+      // Mask account number for privacy (show first 3 and last 2 digits)
+      const maskedAccountNumber = `${accountNumber.slice(0, 3)}***${accountNumber.slice(-2)}`;
+      
+      const historyData = {
+        type: 'account_check',
+        account_id: accountData.account_id,
+        account_number_masked: maskedAccountNumber,
+        trust_score: accountData.trust_score,
+        risk_level: accountData.risk_level,
+        verdict: accountData.risk_level === 'low' ? 'safe' : accountData.risk_level === 'medium' ? 'caution' : 'high_risk',
+        fraud_reports_count: accountData.checks?.fraud_reports?.total || 0,
+        is_verified_business: !!accountData.verified_business,
+        business_name: accountData.verified_business?.name || null,
+        user_id: userId,
+        created_at: new Date(),
+      };
+      
+      await addDoc(collection(db, 'account_checks'), historyData);
+      
+      console.log('✅ Account check saved to history');
+    } catch (error) {
+      // Fail silently - don't block user flow
+      console.warn('Failed to save account check to history:', error);
+    }
+  }
 }
 
 export const accountsService = AccountsService.getInstance();

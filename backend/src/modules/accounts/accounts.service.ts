@@ -169,12 +169,17 @@ export class AccountsService {
 
         // Check if linked to verified business
         let verifiedBusiness = null;
+        
+        this.logger.log(`🔍 Looking for verified business with account hash: ${accountHash.slice(0, 16)}...`);
+        
         const businessSnapshot = await this.db
           .collection('businesses')
           .where('bank_account.number_encrypted', '==', accountHash)
           .where('verification.verified', '==', true)
           .limit(1)
           .get();
+        
+        this.logger.log(`📊 Found ${businessSnapshot.size} verified businesses matching this account`);
 
         if (!businessSnapshot.empty) {
           const businessDoc = businessSnapshot.docs[0];

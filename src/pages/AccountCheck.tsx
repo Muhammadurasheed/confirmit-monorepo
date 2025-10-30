@@ -38,6 +38,10 @@ const AccountCheck = () => {
       });
 
       setResult(checkResult);
+      
+      // Save to account check history
+      await accountsService.saveAccountCheckToHistory(checkResult.data, accountNumber);
+      
       toast.success("Account check complete!");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Account check failed");

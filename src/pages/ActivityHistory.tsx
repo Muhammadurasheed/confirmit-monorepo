@@ -13,12 +13,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { collection, query, where, orderBy, getDocs, limit } from "firebase/firestore";
-import { FileText, Calendar, AlertCircle, CheckCircle2, AlertTriangle, Trash2 } from "lucide-react";
+import { FileText, Calendar, AlertCircle, CheckCircle2, AlertTriangle, Trash2, ShieldCheck, Eye } from "lucide-react";
 import TrustScoreGauge from "@/components/shared/TrustScoreGauge";
 import { format } from "date-fns";
 
 interface ReceiptHistory {
   id: string;
+  type: 'receipt_scan';
   receipt_id: string;
   user_id: string;
   storage_path: string;
@@ -28,10 +29,27 @@ interface ReceiptHistory {
   merchant_name?: string;
 }
 
-const ScanHistory = () => {
+interface AccountCheckHistory {
+  id: string;
+  type: 'account_check';
+  account_id: string;
+  account_number_masked: string;
+  trust_score: number;
+  risk_level: 'low' | 'medium' | 'high';
+  verdict: 'safe' | 'caution' | 'high_risk';
+  fraud_reports_count: number;
+  is_verified_business: boolean;
+  business_name?: string | null;
+  user_id: string;
+  created_at: any;
+}
+
+type ActivityItem = ReceiptHistory | AccountCheckHistory;
+
+const ActivityHistory = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [receipts, setReceipts] = useState<ReceiptHistory[]>([]);
+  const [receipts, setReceipts] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "authentic" | "suspicious" | "fraudulent">("all");
 
@@ -40,31 +58,64 @@ const ScanHistory = () => {
       try {
         // For authenticated users, fetch from Firestore
         if (user) {
+          // Fetch both receipts and account checks in parallel
           const receiptsRef = collection(db, "receipts");
-          const q = query(
+          const accountChecksRef = collection(db, "account_checks");
+          
+          const receiptsQuery = query(
             receiptsRef,
             where("user_id", "==", user.uid),
             orderBy("created_at", "desc"),
             limit(50)
           );
 
-          const querySnapshot = await getDocs(q);
-          const fetchedReceipts = querySnapshot.docs.map((doc) => ({
+          const accountChecksQuery = query(
+            accountChecksRef,
+            where("user_id", "==", user.uid),
+            orderBy("created_at", "desc"),
+            limit(50)
+          );
+
+          const [receiptsSnapshot, accountChecksSnapshot] = await Promise.all([
+            getDocs(receiptsQuery),
+            getDocs(accountChecksQuery),
+          ]);
+
+          const fetchedReceipts: ActivityItem[] = receiptsSnapshot.docs.map((doc) => ({
             id: doc.id,
+            type: 'receipt_scan' as const,
             ...doc.data(),
           })) as ReceiptHistory[];
 
-          setReceipts(fetchedReceipts);
+          const fetchedAccountChecks: ActivityItem[] = accountChecksSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            type: 'account_check' as const,
+            ...doc.data(),
+          })) as AccountCheckHistory[];
+
+          // Combine and sort by created_at descending
+          const allActivity = [...fetchedReceipts, ...fetchedAccountChecks].sort((a, b) => {
+            const dateA = a.created_at?.toDate ? a.created_at.toDate() : new Date(a.created_at);
+            const dateB = b.created_at?.toDate ? b.created_at.toDate() : new Date(b.created_at);
+            return dateB.getTime() - dateA.getTime();
+          });
+
+          setReceipts(allActivity);
         } else {
           // For anonymous users, fetch from localStorage
           const localHistory = localStorage.getItem("receipt_history");
           if (localHistory) {
-            setReceipts(JSON.parse(localHistory));
+            const parsed = JSON.parse(localHistory);
+            const withType = parsed.map((item: any) => ({
+              ...item,
+              type: 'receipt_scan' as const,
+            }));
+            setReceipts(withType);
           }
         }
       } catch (error: any) {
-        console.error("Error fetching scan history:", error);
-        toast.error("Failed to load scan history", {
+        console.error("Error fetching activity history:", error);
+        toast.error("Failed to load activity history", {
           description: error.message,
         });
       } finally {
@@ -101,9 +152,20 @@ const ScanHistory = () => {
     }
   };
 
-  const filteredReceipts = filter === "all" 
-    ? receipts 
-    : receipts.filter(r => r.verdict === filter);
+  const filteredReceipts = receipts.filter((item) => {
+    if (filter === "all") return true;
+    // For receipts, filter by verdict
+    if (item.type === 'receipt_scan') {
+      return item.verdict === filter;
+    }
+    // For account checks, filter by risk level
+    if (item.type === 'account_check') {
+      if (filter === 'authentic') return item.verdict === 'safe';
+      if (filter === 'suspicious') return item.verdict === 'caution';
+      if (filter === 'fraudulent') return item.verdict === 'high_risk';
+    }
+    return false;
+  });
 
   if (loading) {
     return (
@@ -129,9 +191,9 @@ const ScanHistory = () => {
                   <FileText className="h-12 w-12 text-primary" />
                 </div>
               </div>
-              <CardTitle className="text-2xl">No Scan History</CardTitle>
+              <CardTitle className="text-2xl">No Activity History</CardTitle>
               <CardDescription className="text-base mt-2">
-                You haven't scanned any receipts yet. Start verifying receipts to build your scan history.
+                You haven't scanned any receipts or checked any accounts yet. Start using ConfirmIT to build your activity history.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -156,9 +218,9 @@ const ScanHistory = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className="text-4xl font-bold mb-2">Scan History</h1>
+            <h1 className="text-4xl font-bold mb-2">Activity History</h1>
             <p className="text-muted-foreground">
-              View all your previously scanned receipts ({receipts.length} total)
+              View all your scanned receipts and checked accounts ({receipts.length} total)
             </p>
           </motion.div>
 
@@ -166,80 +228,157 @@ const ScanHistory = () => {
             <TabsList className="mb-6">
               <TabsTrigger value="all">All ({receipts.length})</TabsTrigger>
               <TabsTrigger value="authentic">
-                Authentic ({receipts.filter(r => r.verdict === "authentic").length})
+                Safe ({receipts.filter(r => 
+                  (r.type === 'receipt_scan' && r.verdict === "authentic") ||
+                  (r.type === 'account_check' && r.verdict === 'safe')
+                ).length})
               </TabsTrigger>
               <TabsTrigger value="suspicious">
-                Suspicious ({receipts.filter(r => r.verdict === "suspicious").length})
+                Caution ({receipts.filter(r => 
+                  (r.type === 'receipt_scan' && r.verdict === "suspicious") ||
+                  (r.type === 'account_check' && r.verdict === 'caution')
+                ).length})
               </TabsTrigger>
               <TabsTrigger value="fraudulent">
-                Fraudulent ({receipts.filter(r => r.verdict === "fraudulent").length})
+                High Risk ({receipts.filter(r => 
+                  (r.type === 'receipt_scan' && r.verdict === "fraudulent") ||
+                  (r.type === 'account_check' && r.verdict === 'high_risk')
+                ).length})
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value={filter}>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredReceipts.map((receipt) => (
+              <div className="grid gap-6">
+                {filteredReceipts.map((item, index) => (
                   <motion.div
-                    key={receipt.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    whileHover={{ scale: 1.02 }}
+                    key={item.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
                   >
-                    <Card
-                      className="cursor-pointer hover:shadow-lg transition-all h-full"
-                      onClick={() => navigate(`/quick-scan?receipt=${receipt.receipt_id}`)}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="aspect-video relative rounded-lg overflow-hidden bg-muted mb-3 flex items-center justify-center">
-                          {receipt.storage_path ? (
-                            <img
-                              src={receipt.storage_path}
-                              alt="Receipt preview"
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                const parent = e.currentTarget.parentElement;
-                                if (parent && !parent.querySelector('.fallback-icon')) {
-                                  const fallback = document.createElement('div');
-                                  fallback.className = 'fallback-icon flex flex-col items-center justify-center text-muted-foreground';
-                                  fallback.innerHTML = '<svg class="h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><p class="text-sm">Receipt Image</p>';
-                                  parent.appendChild(fallback);
-                                }
-                              }}
-                            />
-                          ) : (
-                            <div className="flex flex-col items-center justify-center text-muted-foreground">
-                              <FileText className="h-12 w-12 mb-2" />
-                              <p className="text-sm">No preview available</p>
+                    {item.type === 'receipt_scan' ? (
+                      <Card 
+                        className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => navigate(`/quick-scan?receipt=${item.receipt_id}`)}
+                      >
+                        <CardContent className="p-0">
+                          <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4">
+                            {/* Receipt Preview */}
+                            <div className="relative h-48 md:h-auto bg-muted flex items-center justify-center">
+                              {item.storage_path ? (
+                                <img
+                                  src={item.storage_path}
+                                  alt="Receipt"
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="text-muted-foreground flex flex-col items-center gap-2 p-4">
+                                  <FileText className="h-12 w-12" />
+                                  <span className="text-sm">No preview available</span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <TrustScoreGauge score={receipt.trust_score} size="sm" />
-                          <Badge className={getVerdictColor(receipt.verdict)}>
-                            {getVerdictIcon(receipt.verdict)}
-                            <span className="ml-1 capitalize">{receipt.verdict}</span>
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        {receipt.merchant_name && (
-                          <p className="text-sm font-medium mb-2">
-                            {receipt.merchant_name}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {receipt.created_at?.toDate ? 
-                            format(receipt.created_at.toDate(), "MMM dd, yyyy 'at' HH:mm") :
-                            format(new Date(receipt.created_at), "MMM dd, yyyy 'at' HH:mm")
-                          }
-                        </div>
-                        <Button variant="outline" size="sm" className="w-full mt-3">
-                          View Full Report
-                        </Button>
-                      </CardContent>
-                    </Card>
+
+                            {/* Receipt Details */}
+                            <div className="p-6">
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <TrustScoreGauge score={item.trust_score} size="sm" />
+                                    <Badge
+                                      className={`flex items-center gap-1 ${
+                                        item.verdict === 'authentic' ? 'bg-success text-success-foreground' :
+                                        item.verdict === 'suspicious' ? 'bg-warning text-warning-foreground' :
+                                        'bg-destructive text-destructive-foreground'
+                                      }`}
+                                    >
+                                      {getVerdictIcon(item.verdict)}
+                                      {item.verdict.charAt(0).toUpperCase() + item.verdict.slice(1)}
+                                    </Badge>
+                                  </div>
+                                  {item.merchant_name && (
+                                    <p className="text-sm font-medium mb-1">{item.merchant_name}</p>
+                                  )}
+                                  <p className="text-xs text-muted-foreground">
+                                    <Calendar className="h-3 w-3 inline mr-1" />
+                                    {item.created_at?.toDate ? 
+                                      format(item.created_at.toDate(), "PPp") :
+                                      format(new Date(item.created_at), "PPp")
+                                    }
+                                  </p>
+                                </div>
+                                <Button variant="ghost" size="sm">
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View Report
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Card 
+                        className="overflow-hidden hover:shadow-lg transition-shadow"
+                      >
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="p-2 bg-primary/10 rounded-lg">
+                                  <ShieldCheck className="h-5 w-5 text-primary" />
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold">Account Check</h3>
+                                  <p className="text-sm text-muted-foreground">
+                                    {item.account_number_masked}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-4 mb-3">
+                                <TrustScoreGauge score={item.trust_score} size="sm" />
+                                <Badge
+                                  className={`flex items-center gap-1 ${
+                                    item.risk_level === 'low' ? 'bg-success text-success-foreground' :
+                                    item.risk_level === 'medium' ? 'bg-warning text-warning-foreground' :
+                                    'bg-destructive text-destructive-foreground'
+                                  }`}
+                                >
+                                  {item.risk_level === 'low' ? <ShieldCheck className="h-3 w-3" /> :
+                                   item.risk_level === 'medium' ? <AlertTriangle className="h-3 w-3" /> :
+                                   <AlertTriangle className="h-3 w-3" />}
+                                  {item.risk_level === 'low' ? 'Safe' :
+                                   item.risk_level === 'medium' ? 'Caution' :
+                                   'High Risk'}
+                                </Badge>
+                              </div>
+
+                              {item.is_verified_business && item.business_name && (
+                                <p className="text-sm mb-2">
+                                  <span className="text-muted-foreground">Verified Business:</span>{' '}
+                                  <span className="font-medium">{item.business_name}</span>
+                                </p>
+                              )}
+
+                              {item.fraud_reports_count > 0 && (
+                                <p className="text-sm text-destructive mb-2">
+                                  ⚠️ {item.fraud_reports_count} fraud report{item.fraud_reports_count > 1 ? 's' : ''}
+                                </p>
+                              )}
+
+                              <p className="text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3 inline mr-1" />
+                                {item.created_at?.toDate ? 
+                                  format(item.created_at.toDate(), "PPp") :
+                                  format(new Date(item.created_at), "PPp")
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                   </motion.div>
                 ))}
               </div>
@@ -252,4 +391,4 @@ const ScanHistory = () => {
   );
 };
 
-export default ScanHistory;
+export default ActivityHistory;
