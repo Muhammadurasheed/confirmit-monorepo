@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import TrustScoreGauge from "@/components/shared/TrustScoreGauge";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import TrustIdNftCard from "@/components/shared/TrustIdNftCard";
+import { BusinessReviewModal } from "@/components/features/business/BusinessReviewModal";
 import { getBusiness } from "@/services/business";
 import { Business } from "@/types";
 import {
@@ -24,7 +25,8 @@ import {
   ExternalLink,
   Star,
   Eye,
-  Clock
+  Clock,
+  MessageSquare
 } from "lucide-react";
 
 /**
@@ -37,6 +39,7 @@ const BusinessProfile = () => {
   const { id } = useParams<{ id: string }>();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   useEffect(() => {
     const fetchBusiness = async () => {
@@ -181,7 +184,7 @@ const BusinessProfile = () => {
                   </div>
 
                   {/* Trust Score */}
-                  <TrustScoreGauge score={business.trustScore} size="lg" />
+                  <TrustScoreGauge score={business.trustScore || 0} size="lg" />
                 </div>
               </div>
             </div>
@@ -273,14 +276,14 @@ const BusinessProfile = () => {
                       <div className="flex justify-center mb-2">
                         <Eye className="h-5 w-5 text-primary" />
                       </div>
-                      <p className="text-2xl font-bold">{business.profileViews || 0}</p>
+                      <p className="text-2xl font-bold">{business.stats?.profileViews || business.profileViews || 0}</p>
                       <p className="text-xs text-muted-foreground">Profile Views</p>
                     </div>
                     <div>
                       <div className="flex justify-center mb-2">
                         <Shield className="h-5 w-5 text-success" />
                       </div>
-                      <p className="text-2xl font-bold">{business.verifications || 0}</p>
+                      <p className="text-2xl font-bold">{business.stats?.verifications || business.verifications || 0}</p>
                       <p className="text-xs text-muted-foreground">Verifications</p>
                     </div>
                     <div>
@@ -288,7 +291,10 @@ const BusinessProfile = () => {
                         <Clock className="h-5 w-5 text-purple-500" />
                       </div>
                       <p className="text-2xl font-bold">
-                        {Math.round((Date.now() - new Date(business.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                        {business.createdAt ? 
+                          Math.max(0, Math.round((Date.now() - (typeof business.createdAt === 'object' && (business.createdAt as any)._seconds ? (business.createdAt as any)._seconds * 1000 : new Date(business.createdAt as string).getTime())) / (1000 * 60 * 60 * 24)))
+                          : 0
+                        }
                       </p>
                       <p className="text-xs text-muted-foreground">Days Active</p>
                     </div>
@@ -343,6 +349,24 @@ const BusinessProfile = () => {
                 </motion.div>
               )}
 
+              {/* Leave a Review */}
+              <Card className="shadow-elegant">
+                <CardHeader>
+                  <CardTitle className="text-base">Community Feedback</CardTitle>
+                  <CardDescription>Help others by sharing your experience</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => setShowReviewModal(true)}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Write a Review
+                  </Button>
+                </CardContent>
+              </Card>
+
               {/* Verification Details */}
               <Card className="shadow-elegant">
                 <CardHeader>
@@ -363,7 +387,18 @@ const BusinessProfile = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Verified Date</span>
                     <span className="text-sm">
-                      {new Date(business.verification.verifiedAt || business.createdAt).toLocaleDateString()}
+                      {(() => {
+                        const verifiedAt = business.verification.verifiedAt || business.createdAt;
+                        if (!verifiedAt) return 'N/A';
+                        
+                        // Handle Firestore timestamp
+                        if (typeof verifiedAt === 'object' && (verifiedAt as any)._seconds) {
+                          return new Date((verifiedAt as any)._seconds * 1000).toLocaleDateString();
+                        }
+                        
+                        // Handle ISO string or Date object
+                        return new Date(verifiedAt as string).toLocaleDateString();
+                      })()}
                     </span>
                   </div>
                   <Separator />
@@ -437,6 +472,14 @@ const BusinessProfile = () => {
         </Container>
       </main>
       <Footer />
+
+      {/* Review Modal */}
+      <BusinessReviewModal
+        open={showReviewModal}
+        onOpenChange={setShowReviewModal}
+        businessId={business.businessId}
+        businessName={business.name}
+      />
     </div>
   );
 };

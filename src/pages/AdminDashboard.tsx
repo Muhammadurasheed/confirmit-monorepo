@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, CheckCircle, XCircle, Eye, Building2, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { API_ENDPOINTS } from "@/lib/constants";
+import { BusinessDetailsModal } from "@/components/features/admin/BusinessDetailsModal";
 
 interface Business {
   business_id: string;
@@ -50,6 +51,7 @@ export default function AdminDashboard() {
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
 
@@ -311,7 +313,10 @@ export default function AdminDashboard() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={() => navigate(`/business/${business.business_id}`)}
+                      onClick={() => {
+                        setSelectedBusiness(business);
+                        setShowDetailsModal(true);
+                      }}
                       variant="outline"
                     >
                       <Eye className="h-4 w-4 mr-2" />
@@ -432,6 +437,13 @@ export default function AdminDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Business Details Modal */}
+      <BusinessDetailsModal
+        open={showDetailsModal}
+        onOpenChange={setShowDetailsModal}
+        business={selectedBusiness}
+      />
 
       {/* Reject Dialog */}
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>

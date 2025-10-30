@@ -196,16 +196,35 @@ const BusinessDirectory = () => {
                   >
                     <Card className="h-full hover:shadow-elegant transition-shadow duration-300">
                       <CardHeader>
-                        <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-start gap-4 mb-3">
+                          {/* Business Logo */}
+                          {business.logo ? (
+                            <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-primary/10 flex-shrink-0">
+                              <img
+                                src={business.logo}
+                                alt={`${business.name} logo`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-2xl font-bold text-primary">
+                                {business.name.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                          
                           <div className="flex-1">
-                            <CardTitle className="text-xl mb-2">{business.name}</CardTitle>
+                            <div className="flex items-start justify-between gap-2">
+                              <CardTitle className="text-xl mb-2">{business.name}</CardTitle>
+                              {business.verified && (
+                                <Award className="h-6 w-6 text-success flex-shrink-0" />
+                              )}
+                            </div>
                             <Badge variant="outline" className="mb-2">
                               {business.category}
                             </Badge>
                           </div>
-                          {business.verified && (
-                            <Award className="h-6 w-6 text-success flex-shrink-0" />
-                          )}
                         </div>
                         <Badge className={getTierBadgeColor(business.tier)}>
                           {getTierLabel(business.tier)}

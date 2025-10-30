@@ -96,11 +96,27 @@ export const ResultsDisplay = ({
   const VerdictIcon = config.icon;
 
   const handleAnchorToHedera = async () => {
-    // TODO: Implement Hedera anchoring API call
-    return {
-      transactionId: '0.0.123456@1234567890.123456789',
-      explorerUrl: 'https://hashscan.io/testnet/transaction/0.0.123456@1234567890.123456789'
-    };
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/receipts/${receiptId}/anchor`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to anchor to Hedera');
+      }
+
+      const data = await response.json();
+      return {
+        transactionId: data.hedera_anchor.transaction_id,
+        explorerUrl: data.hedera_anchor.explorer_url,
+      };
+    } catch (error) {
+      console.error('Hedera anchoring error:', error);
+      throw error;
+    }
   };
 
   return (

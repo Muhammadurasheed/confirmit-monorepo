@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from "@/lib/constants";
 export interface BusinessListing {
   business_id: string;
   name: string;
+  logo?: string;
   category: string;
   trust_score: number;
   rating: number;

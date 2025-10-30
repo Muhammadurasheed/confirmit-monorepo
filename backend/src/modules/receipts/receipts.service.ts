@@ -254,6 +254,49 @@ export class ReceiptsService {
     });
   }
 
+  async anchorReceiptToHedera(receiptId: string) {
+    this.logger.log(`Anchoring receipt ${receiptId} to Hedera`);
+
+    try {
+      const receiptRef = this.db.collection('receipts').doc(receiptId);
+      const doc = await receiptRef.get();
+
+      if (!doc.exists) {
+        throw new Error('Receipt not found');
+      }
+
+      const receiptData = doc.data();
+
+      if (receiptData.hedera_anchor) {
+        // Already anchored
+        return {
+          success: true,
+          message: 'Receipt already anchored',
+          hedera_anchor: receiptData.hedera_anchor,
+        };
+      }
+
+      // Anchor to Hedera
+      const hederaResult = await this.hederaService.anchorToHCS(
+        receiptId,
+        receiptData.analysis,
+      );
+
+      await receiptRef.update({
+        hedera_anchor: hederaResult,
+      });
+
+      return {
+        success: true,
+        message: 'Successfully anchored to Hedera',
+        hedera_anchor: hederaResult,
+      };
+    } catch (error) {
+      this.logger.error(`Hedera anchoring failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
   private generateReceiptId(): string {
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substring(2, 9);

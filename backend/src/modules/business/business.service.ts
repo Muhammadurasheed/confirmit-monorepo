@@ -114,6 +114,7 @@ export class BusinessService {
         return {
           business_id: doc.id,
           name: data.name,
+          logo: data.logo || null,
           category: data.category,
           trust_score: data.trust_score || 0,
           rating: data.rating || 0,

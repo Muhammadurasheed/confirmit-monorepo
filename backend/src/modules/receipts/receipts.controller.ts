@@ -43,4 +43,10 @@ export class ReceiptsController {
   async getUserReceipts(@Param('userId') userId: string) {
     return this.receiptsService.getUserReceipts(userId);
   }
+
+  @Post(':id/anchor')
+  @ApiOperation({ summary: 'Anchor receipt to Hedera blockchain' })
+  async anchorReceipt(@Param('id') id: string) {
+    return this.receiptsService.anchorReceiptToHedera(id);
+  }
 }
