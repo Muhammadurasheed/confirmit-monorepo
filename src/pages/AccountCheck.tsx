@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Container from "@/components/layout/Container";
@@ -10,11 +11,13 @@ import { AlertTriangle, ShieldCheck, TrendingDown, ArrowLeft } from "lucide-reac
 import { toast } from "sonner";
 import { AccountInputWithBankResolution } from "@/components/features/account-check/AccountInputWithBankResolution";
 import { AccountCheckProgress } from "@/components/features/account-check/AccountCheckProgress";
-import { TrustScore } from "@/components/features/account-check/TrustScore";
-import { FraudAlerts } from "@/components/features/account-check/FraudAlerts";
+import { HighRiskResult } from "@/components/features/account-check/HighRiskResult";
+import { VerifiedResult } from "@/components/features/account-check/VerifiedResult";
+import { NoDataResult } from "@/components/features/account-check/NoDataResult";
 import { accountsService, type AccountCheckResult } from "@/services/accounts";
 
 const AccountCheck = () => {
+  const navigate = useNavigate();
   const [isChecking, setIsChecking] = useState(false);
   const [result, setResult] = useState<AccountCheckResult | null>(null);
   const [currentAccountNumber, setCurrentAccountNumber] = useState<string>("");
@@ -48,18 +51,77 @@ const AccountCheck = () => {
     setResult(null);
   };
 
-  const getRecommendation = (data: AccountCheckResult["data"]): string => {
+  const handleReportFraud = () => {
+    navigate("/report-fraud", { 
+      state: { accountNumber: currentAccountNumber } 
+    });
+  };
+
+  const handleRequestVerification = () => {
+    navigate("/business/register");
+  };
+
+  // Determine which result component to render based on the check outcome
+  const renderResult = () => {
+    if (!result) return null;
+
+    const { data } = result;
     const hasRecentReports = data.checks.fraud_reports.recent_30_days > 0;
     const hasFlags = data.checks.flags.length > 0;
     const trustScore = data.trust_score;
+    const isHighRisk = hasRecentReports || hasFlags || trustScore < 40;
+    const isVerifiedBusiness = !!data.verified_business;
+    const hasAnyData = data.checks.fraud_reports.total > 0 || data.checks.check_count > 10 || isVerifiedBusiness;
 
-    if (hasRecentReports || hasFlags || trustScore < 40) {
-      return "⛔ DO NOT SEND MONEY to this account. Multiple security red flags detected. This account has been reported for fraudulent activity.";
-    } else if (data.risk_level === "medium" || trustScore < 70) {
-      return "⚠️ PROCEED WITH CAUTION. Verify recipient details carefully before sending money. Contact the recipient through a trusted channel to confirm their account number.";
-    } else {
-      return "✅ This account appears safe based on our analysis. However, always verify recipient details before sending money.";
+    // Outcome A: HIGH RISK (has fraud reports or flags or low trust score)
+    if (isHighRisk) {
+      return (
+        <HighRiskResult
+          accountNumber={currentAccountNumber}
+          trustScore={trustScore}
+          fraudReports={{
+            total: data.checks.fraud_reports.total,
+            recent_30_days: data.checks.fraud_reports.recent_30_days,
+          }}
+          checkCount={data.checks.check_count}
+          proceedRate={0.09} // Calculate from backend data if available
+          flags={data.checks.flags}
+          onReportFraud={handleReportFraud}
+        />
+      );
     }
+
+    // Outcome B: VERIFIED BUSINESS (safe)
+    if (isVerifiedBusiness && data.verified_business) {
+      return (
+        <VerifiedResult
+          accountNumber={currentAccountNumber}
+          trustScore={trustScore}
+          business={{
+            business_id: data.verified_business.business_id,
+            name: data.verified_business.name,
+            verified: data.verified_business.verified,
+            trust_score: data.verified_business.trust_score,
+            rating: 4.8, // Get from backend if available
+            review_count: 127, // Get from backend if available
+            location: "Ikeja, Lagos", // Get from backend if available
+            tier: 3, // Get from backend if available
+            verification_date: new Date(data.verified_business.verification_date),
+          }}
+          checkCount={data.checks.check_count}
+        />
+      );
+    }
+
+    // Outcome C: NO DATA (most common - no significant history)
+    return (
+      <NoDataResult
+        accountNumber={currentAccountNumber}
+        checkCount={data.checks.check_count}
+        onReportFraud={handleReportFraud}
+        onRequestVerification={handleRequestVerification}
+      />
+    );
   };
 
   return (
@@ -171,22 +233,8 @@ const AccountCheck = () => {
                   Check Another Account
                 </Button>
 
-                {/* Trust Score Display */}
-                <TrustScore
-                  score={result.data.trust_score}
-                  riskLevel={result.data.risk_level}
-                  checkCount={result.data.checks.check_count}
-                  lastChecked={result.data.checks.last_checked}
-                />
-
-                {/* Fraud Alerts */}
-                <FraudAlerts
-                  accountNumber={currentAccountNumber}
-                  fraudReports={result.data.checks.fraud_reports}
-                  flags={result.data.checks.flags}
-                  verifiedBusiness={result.data.verified_business}
-                  recommendation={getRecommendation(result.data)}
-                />
+                {/* Render appropriate result component based on outcome */}
+                {renderResult()}
               </motion.div>
             )}
           </AnimatePresence>

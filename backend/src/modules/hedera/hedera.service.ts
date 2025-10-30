@@ -177,7 +177,8 @@ export class HederaService {
         business_id: businessId,
         metadata: fullMetadata, // Store full metadata in Firestore
         mint_transaction_id: mintTx.transactionId.toString(),
-        explorer_url: `https://hashscan.io/${this.configService.get('hedera.network')}/token/${tokenId}/${serialNumber}`,
+        // Correct Hedera NFT explorer URL format - token page with serial navigation
+        explorer_url: `https://hashscan.io/${this.configService.get('hedera.network')}/token/${tokenId}`,
         minted_at: admin.firestore.FieldValue.serverTimestamp(),
       };
 

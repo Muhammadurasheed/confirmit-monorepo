@@ -88,18 +88,14 @@ export const AccountInputWithBankResolution = ({
   };
 
   const handleSubmit = (data: AccountFormData) => {
-    // For "Other" banks, skip account resolution requirement
-    if (!isOtherBank && !isResolved) {
-      toast.error("Please resolve the account first");
-      return;
-    }
-    
     // For "Other" banks, require manual bank name entry
     if (isOtherBank && !data.bankName?.trim()) {
       toast.error("Please enter the bank name");
       return;
     }
     
+    // Allow submission even if Paystack resolution hasn't completed
+    // Backend doesn't require resolved account name to function
     onSubmit(data.accountNumber, data.bankCode, data.businessName);
   };
 
@@ -251,7 +247,7 @@ export const AccountInputWithBankResolution = ({
           type="submit"
           size="lg"
           className="w-full"
-          disabled={isLoading || (!isResolved && !isOtherBank)}
+          disabled={isLoading}
         >
           {isLoading ? (
             <>
