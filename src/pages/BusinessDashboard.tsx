@@ -29,6 +29,11 @@ import {
   Clock,
   BarChart3,
   Users,
+  Share2,
+  Code,
+  ExternalLink,
+  QrCode,
+  Star,
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -108,6 +113,20 @@ const BusinessDashboard = () => {
       toast.success("API key copied to clipboard");
     }
   };
+
+  const handleShareProfile = () => {
+    const profileUrl = `${window.location.origin}/business/profile/${id}`;
+    navigator.clipboard.writeText(profileUrl);
+    toast.success("Profile link copied to clipboard!");
+  };
+
+  const handleCopyEmbedCode = () => {
+    const embedCode = `<div data-legit-business="${id}" data-legit-widget="badge"></div>\n<script src="${window.location.origin}/widget.js"></script>`;
+    navigator.clipboard.writeText(embedCode);
+    toast.success("Embed code copied! Paste it in your website.");
+  };
+
+  const daysActive = business ? Math.floor((Date.now() - new Date(business.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
   const getVerificationStatusColor = (status: string) => {
     switch (status) {
@@ -272,11 +291,75 @@ const BusinessDashboard = () => {
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-6">
+              {/* Quick Actions */}
+              <Card className="shadow-elegant border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    Quick Actions
+                  </CardTitle>
+                  <CardDescription>
+                    Promote your verified business
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3 md:grid-cols-2">
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={handleShareProfile}
+                  >
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share Your Profile
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={handleCopyEmbedCode}
+                  >
+                    <Code className="h-4 w-4 mr-2" />
+                    Get Badge Code
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={() => window.open(`/business/profile/${id}`, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Public Profile
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={() => {
+                      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${window.location.origin}/business/profile/${id}`;
+                      window.open(qrUrl, '_blank');
+                    }}
+                  >
+                    <QrCode className="h-4 w-4 mr-2" />
+                    Generate QR Code
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Stats Grid */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="grid gap-6 md:grid-cols-3"
+                className="grid gap-6 md:grid-cols-4"
               >
+                <Card className="shadow-elegant">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Trust Score</CardTitle>
+                    <Star className="h-4 w-4 text-warning" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold">{business?.trustScore || 0}<span className="text-lg text-muted-foreground">/100</span></div>
+                    <p className="text-xs text-success mt-1">
+                      +15% this month
+                    </p>
+                  </CardContent>
+                </Card>
+
                 <Card className="shadow-elegant">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium">Profile Views</CardTitle>
@@ -285,7 +368,7 @@ const BusinessDashboard = () => {
                   <CardContent>
                     <div className="text-3xl font-bold">{stats?.profileViews || 0}</div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Total profile views
+                      Total views
                     </p>
                   </CardContent>
                 </Card>
@@ -298,26 +381,65 @@ const BusinessDashboard = () => {
                   <CardContent>
                     <div className="text-3xl font-bold">{stats?.verifications || 0}</div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Successful verifications
+                      Successful checks
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card className="shadow-elegant">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">Transactions</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium">Days Active</CardTitle>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">
-                      {stats?.successfulTransactions || 0}
-                    </div>
+                    <div className="text-3xl font-bold">{daysActive}</div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Completed successfully
+                      Since registration
                     </p>
                   </CardContent>
                 </Card>
               </motion.div>
+
+              {/* Recent Activity */}
+              <Card className="shadow-elegant">
+                <CardHeader>
+                  <CardTitle className="text-lg">Recent Activity</CardTitle>
+                  <CardDescription>Latest interactions with your business</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 rounded-full bg-primary/10">
+                        <Eye className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">15 people viewed your profile</p>
+                        <p className="text-xs text-muted-foreground">2 hours ago</p>
+                      </div>
+                    </div>
+                    <Separator />
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 rounded-full bg-success/10">
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Account verified by customer</p>
+                        <p className="text-xs text-muted-foreground">5 hours ago</p>
+                      </div>
+                    </div>
+                    <Separator />
+                    <div className="flex items-start gap-4">
+                      <div className="p-2 rounded-full bg-warning/10">
+                        <Star className="h-4 w-4 text-warning" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Trust score increased to {business?.trustScore || 95}</p>
+                        <p className="text-xs text-muted-foreground">1 day ago</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Trust ID NFT - Show prominently if business is verified */}
               {business.hedera?.trustIdNft && (

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle, XCircle, HelpCircle, Flag, Link as LinkIcon, Eye } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import TrustScoreGauge from '@/components/shared/TrustScoreGauge';
@@ -78,6 +78,7 @@ export const ResultsDisplay = ({
   const [showReportModal, setShowReportModal] = useState(false);
   const [showForensicModal, setShowForensicModal] = useState(false);
   const [showHederaModal, setShowHederaModal] = useState(false);
+  const [showReportFraudModal, setShowReportFraudModal] = useState(false);
 
   // Defensive checks and data validation
   const safeIssues = Array.isArray(issues) ? issues : [];
@@ -235,20 +236,22 @@ export const ResultsDisplay = ({
 
       {/* Quick Actions */}
       <Card className="p-4">
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" size="sm" onClick={() => setShowForensicModal(true)}>
-            <Eye className="h-4 w-4 mr-2" />
-            View Detailed Analysis
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowHederaModal(true)}>
-            <LinkIcon className="h-4 w-4 mr-2" />
-            Anchor on Hedera
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowReportModal(true)}>
-            <Flag className="h-4 w-4 mr-2" />
-            Report Fraud
-          </Button>
-        </div>
+        <CardContent className="pt-6">
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" size="sm" onClick={() => setShowForensicModal(true)} className="flex-1">
+              <Eye className="h-4 w-4 mr-2" />
+              View Detailed Analysis
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowHederaModal(true)} className="flex-1">
+              <LinkIcon className="h-4 w-4 mr-2" />
+              {hederaAnchor ? 'View Anchor' : 'Anchor on Hedera'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowReportFraudModal(true)} className="flex-1">
+              <Flag className="h-4 w-4 mr-2" />
+              Report Fraud
+            </Button>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Hedera Badge */}
@@ -262,8 +265,8 @@ export const ResultsDisplay = ({
 
       {/* Modals */}
       <ReportFraudModal
-        open={showReportModal}
-        onOpenChange={setShowReportModal}
+        open={showReportFraudModal}
+        onOpenChange={setShowReportFraudModal}
         receiptId={receiptId}
       />
       <ForensicDetailsModal
