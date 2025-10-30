@@ -16,10 +16,14 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { UploadZone } from "@/components/features/receipt-scan/UploadZone";
 import { AnalysisProgress } from "@/components/features/receipt-scan/AnalysisProgress";
 import { ResultsDisplay } from "@/components/features/receipt-scan/ResultsDisplay";
+import { useAuth } from "@/hooks/useAuth";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 const QuickScan = () => {
   const [anchorOnHedera, setAnchorOnHedera] = useState(false);
   const [uploadedReceiptId, setUploadedReceiptId] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const {
     currentReceipt,
@@ -37,6 +41,42 @@ const QuickScan = () => {
 
   const { uploadReceipt, isUploading } = useReceiptUpload();
 
+  // Save receipt to history after analysis completes
+  const saveToHistory = async (receiptData: any, analysisResults: any) => {
+    try {
+      const historyEntry = {
+        receipt_id: receiptData.receiptId,
+        user_id: user?.uid || 'anonymous',
+        storage_path: receiptData.storagePath,
+        trust_score: analysisResults.trust_score || analysisResults.trustScore || 0,
+        verdict: analysisResults.verdict || 'unclear',
+        merchant_name: analysisResults.merchant?.name || null,
+        created_at: serverTimestamp(),
+        analysis_data: analysisResults,
+      };
+
+      if (user && db) {
+        // Save to Firestore for authenticated users
+        await addDoc(collection(db, 'receipts'), historyEntry);
+        console.log('✅ Receipt saved to Firestore');
+      } else {
+        // Save to localStorage for anonymous users
+        const localHistory = localStorage.getItem('receipt_history');
+        const history = localHistory ? JSON.parse(localHistory) : [];
+        history.unshift({
+          ...historyEntry,
+          id: receiptData.receiptId,
+          created_at: new Date().toISOString(),
+        });
+        localStorage.setItem('receipt_history', JSON.stringify(history.slice(0, 50)));
+        console.log('✅ Receipt saved to localStorage');
+      }
+    } catch (error) {
+      console.error('❌ Failed to save to history:', error);
+      // Don't show error to user - history saving is non-critical
+    }
+  };
+
   // WebSocket for real-time updates
   useWebSocket({
     receiptId: uploadedReceiptId || undefined,
@@ -44,7 +84,7 @@ const QuickScan = () => {
       console.log('📊 Progress received in QuickScan:', data);
       updateProgress(data.progress || 0, data.status || 'Processing...');
     },
-    onComplete: (data) => {
+    onComplete: async (data) => {
       console.log('✅ Analysis complete in QuickScan:', data);
       console.log('📦 Full data structure:', JSON.stringify(data, null, 2));
       
@@ -67,6 +107,12 @@ const QuickScan = () => {
       console.log('📊 Final analysis data:', JSON.stringify(analysisData, null, 2));
       setResults(analysisData);
       completeAnalysis();
+      
+      // Save to history
+      if (currentReceipt) {
+        await saveToHistory(currentReceipt, analysisData);
+      }
+      
       toast.success('Analysis complete!');
     },
     onError: (error) => {
