@@ -479,20 +479,27 @@ const BusinessDashboard = () => {
                     </div>
                   </div>
                   <Separator />
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">
-                      Bank Account
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm">{business.bankAccount.accountName}</p>
-                      {business.bankAccount.verified && (
-                        <Badge variant="outline" className="bg-success/10 text-success border-success">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Verified
-                        </Badge>
+                  {business.bankAccount && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">
+                        Bank Account
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm">{business.bankAccount.accountName || 'Not provided'}</p>
+                        {business.bankAccount.verified && (
+                          <Badge variant="outline" className="bg-success/10 text-success border-success">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Verified
+                          </Badge>
+                        )}
+                      </div>
+                      {business.bankAccount.bankCode && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Bank Code: {business.bankAccount.bankCode}
+                        </p>
                       )}
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
