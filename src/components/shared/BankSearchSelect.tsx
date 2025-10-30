@@ -60,7 +60,7 @@ export const BankSearchSelect = ({
               <span>{selectedBank.name}</span>
             </div>
           ) : isOther ? (
-            <span className="text-muted-foreground">Other (Manual Entry)</span>
+            <span className="text-muted-foreground">Other</span>
           ) : (
             placeholder
           )}
@@ -102,7 +102,7 @@ export const BankSearchSelect = ({
               ))}
               {/* Other option for unknown banks */}
               <CommandItem
-                value="Other (Manual Entry)"
+                value="Other"
                 onSelect={() => {
                   onValueChange("OTHER");
                   onOtherSelected?.(true);
@@ -116,7 +116,7 @@ export const BankSearchSelect = ({
                     value === "OTHER" ? "opacity-100" : "opacity-0"
                   )}
                 />
-                <span className="font-semibold">Other (Manual Entry)</span>
+                <span className="font-semibold">Other</span>
               </CommandItem>
             </CommandGroup>
           </CommandList>
