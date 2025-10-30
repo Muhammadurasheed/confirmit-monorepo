@@ -23,6 +23,7 @@ const Header = () => {
     { name: "QuickScan", path: "/quick-scan" },
     { name: "Scan History", path: "/scan-history" },
     { name: "Account Check", path: "/account-check" },
+    { name: "Report Fraud", path: "/report-fraud" },
     { name: "Business", path: "/business" },
     { name: "API", path: "/api" },
   ];

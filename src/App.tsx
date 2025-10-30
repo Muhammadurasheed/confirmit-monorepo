@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import QuickScan from "./pages/QuickScan";
 import AccountCheck from "./pages/AccountCheck";
+import ReportFraud from "./pages/ReportFraud";
 import Business from "./pages/Business";
 import BusinessRegister from "./pages/BusinessRegister";
 import BusinessDashboard from "./pages/BusinessDashboard";
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/quick-scan" element={<QuickScan />} />
           <Route path="/scan-history" element={<ScanHistory />} />
           <Route path="/account-check" element={<AccountCheck />} />
+          <Route path="/report-fraud" element={<ReportFraud />} />
           <Route path="/business" element={<Business />} />
           <Route path="/business/register" element={<BusinessRegister />} />
           <Route path="/business/directory" element={<BusinessDirectory />} />
