@@ -23,111 +23,233 @@ export class AccountsService {
     const accountHash = this.hashAccountNumber(accountNumber);
 
     try {
-      // 1. Check if account exists in database (with recent check)
-      const accountDoc = await this.db
-        .collection('accounts')
-        .doc(accountHash)
-        .get();
+      // 1. Query BOTH demo and real data collections in parallel
+      const [demoDoc, realDoc] = await Promise.all([
+        this.db.collection('demo_accounts').doc(accountHash).get(),
+        this.db.collection('accounts').doc(accountHash).get(),
+      ]);
 
-      let accountData: any;
-      const shouldRefresh =
-        !accountDoc.exists ||
-        Date.now() - accountDoc.data()?.checks?.last_checked?.toMillis() >
-          7 * 24 * 60 * 60 * 1000; // 7 days
+      // 2. Check if we have demo data for this account
+      if (demoDoc.exists) {
+        const demoData = demoDoc.data();
+        this.logger.log('Using demo data for this account');
 
-      if (accountDoc.exists && !shouldRefresh) {
-        // Use cached data
-        accountData = accountDoc.data();
-        this.logger.log('Using cached account data');
-      } else {
-        // 2. Call AI service for reputation check (with fallback)
-        let aiResult;
-        
-        try {
-          const aiServiceUrl = this.configService.get('aiService.url');
-          this.logger.log(`Calling AI service: ${aiServiceUrl}/api/check-account`);
-
-          const response = await fetch(`${aiServiceUrl}/api/check-account`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              account_hash: accountHash,
-              bank_code: bankCode,
-              business_name: businessName,
-            }),
-          });
-
-          if (!response.ok) {
-            throw new Error(`AI service error: ${response.statusText}`);
-          }
-
-          aiResult = await response.json();
-        } catch (error) {
-          this.logger.warn(`AI service unavailable, using default values: ${error.message}`);
-          
-          // Fallback to default safe values when AI service is unavailable
-          aiResult = {
-            trust_score: 50,
-            risk_level: 'medium',
-            fraud_reports: {
-              total: 0,
-              recent_30_days: 0,
-            },
-            verified_business_id: null,
-            flags: ['AI service unavailable - manual review recommended'],
-          };
-        }
-
-        // 3. Check if linked to verified business
+        // If demo data has verified business, fetch it
         let verifiedBusiness = null;
-        if (aiResult.verified_business_id) {
+        if (demoData.checks?.verified_business_id) {
           const businessDoc = await this.db
-            .collection('businesses')
-            .doc(aiResult.verified_business_id)
+            .collection('demo_businesses')
+            .doc(demoData.checks.verified_business_id)
             .get();
 
           if (businessDoc.exists) {
             const businessData = businessDoc.data();
+            
+            // Fetch reviews for this business
+            const reviewsSnapshot = await this.db
+              .collection('demo_reviews')
+              .where('business_id', '==', businessDoc.id)
+              .orderBy('created_at', 'desc')
+              .limit(5)
+              .get();
+
+            const reviews = reviewsSnapshot.docs.map(doc => {
+              const reviewData = doc.data();
+              return {
+                rating: reviewData.rating,
+                comment: reviewData.comment,
+                reviewer_name: reviewData.reviewer_name,
+                verified_purchase: reviewData.verified_purchase,
+                created_at: reviewData.created_at?.toDate() || new Date(),
+              };
+            });
+
             verifiedBusiness = {
               business_id: businessDoc.id,
               name: businessData.business_name,
-              verified: businessData.verification_status === 'approved',
+              verified: businessData.verified,
               trust_score: businessData.trust_score || 0,
-              verification_date: businessData.verification_date,
+              rating: businessData.rating || 0,
+              review_count: businessData.review_count || 0,
+              location: businessData.location || '',
+              tier: businessData.tier || 1,
+              verification_date: businessData.verified_at?.toDate() || null,
+              reviews: reviews,
             };
           }
         }
 
-        // 4. Store result
+        // Fetch fraud reports summary for demo account
+        const fraudReportsSnapshot = await this.db
+          .collection('demo_fraud_reports')
+          .where('account_hash', '==', accountHash)
+          .orderBy('reported_at', 'desc')
+          .get();
+
+        const fraudReports = fraudReportsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            category: data.category,
+            description_summary: data.description_summary || data.description?.substring(0, 100),
+            severity: data.severity,
+            verified: data.verified,
+            reported_at: data.reported_at?.toDate() || new Date(),
+          };
+        });
+
+        // Return demo data with enriched information
+        return {
+          success: true,
+          data: {
+            account_id: accountHash,
+            account_hash: accountHash,
+            bank_code: demoData.bank_code,
+            trust_score: demoData.trust_score,
+            risk_level: demoData.risk_level,
+            checks: {
+              last_checked: new Date().toISOString(),
+              check_count: demoData.checks?.check_count || 0,
+              proceed_rate: demoData.checks?.proceed_rate || 0,
+              first_checked: demoData.checks?.first_checked?.toDate() || null,
+              fraud_reports: {
+                total: demoData.checks?.fraud_reports?.total || 0,
+                recent_30_days: demoData.checks?.fraud_reports?.recent_30_days || 0,
+                details: fraudReports.slice(0, 5), // Return top 5 reports
+              },
+              verified_business_id: demoData.checks?.verified_business_id || null,
+              flags: demoData.checks?.flags || [],
+            },
+            verified_business: verifiedBusiness,
+            is_demo: true, // Flag for transparency (backend only)
+          },
+        };
+      }
+
+      // 3. No demo data, check real data
+      const shouldRefresh =
+        !realDoc.exists ||
+        Date.now() - realDoc.data()?.checks?.last_checked?.toMillis() >
+          7 * 24 * 60 * 60 * 1000; // 7 days
+
+      let accountData: any;
+
+      if (realDoc.exists && !shouldRefresh) {
+        // Use cached real data
+        accountData = realDoc.data();
+        this.logger.log('Using cached real account data');
+      } else {
+        // 4. No cached data - check if we have any fraud reports
+        const fraudReportsSnapshot = await this.db
+          .collection('fraud_reports')
+          .where('account_hash', '==', accountHash)
+          .get();
+
+        const fraudCount = fraudReportsSnapshot.size;
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const recentFraudCount = fraudReportsSnapshot.docs.filter(doc => {
+          const reportedAt = doc.data().reported_at?.toDate();
+          return reportedAt && reportedAt > thirtyDaysAgo;
+        }).length;
+
+        // Calculate trust score based on fraud reports
+        const baseTrustScore = 75;
+        const trustScore = Math.max(10, baseTrustScore - (fraudCount * 12));
+        const riskLevel = this.calculateRiskLevel(fraudCount, trustScore);
+
+        const fraudReports = fraudReportsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            category: data.category,
+            description_summary: data.description_summary || data.description?.substring(0, 100),
+            severity: data.severity,
+            verified: data.verified,
+            reported_at: data.reported_at?.toDate() || new Date(),
+          };
+        });
+
+        // Check if linked to verified business
+        let verifiedBusiness = null;
+        const businessSnapshot = await this.db
+          .collection('businesses')
+          .where('account_number_hash', '==', accountHash)
+          .where('verification_status', '==', 'approved')
+          .limit(1)
+          .get();
+
+        if (!businessSnapshot.empty) {
+          const businessDoc = businessSnapshot.docs[0];
+          const businessData = businessDoc.data();
+          
+          // Fetch reviews for this business
+          const reviewsSnapshot = await this.db
+            .collection('reviews')
+            .where('business_id', '==', businessDoc.id)
+            .orderBy('created_at', 'desc')
+            .limit(5)
+            .get();
+
+          const reviews = reviewsSnapshot.docs.map(doc => {
+            const reviewData = doc.data();
+            return {
+              rating: reviewData.rating,
+              comment: reviewData.comment,
+              reviewer_name: reviewData.reviewer_name,
+              verified_purchase: reviewData.verified_purchase || false,
+              created_at: reviewData.created_at?.toDate() || new Date(),
+            };
+          });
+
+          verifiedBusiness = {
+            business_id: businessDoc.id,
+            name: businessData.business_name,
+            verified: true,
+            trust_score: businessData.trust_score || 0,
+            rating: businessData.rating || 0,
+            review_count: businessData.review_count || 0,
+            location: businessData.location || '',
+            tier: businessData.tier || 1,
+            verification_date: businessData.verified_at?.toDate() || null,
+            reviews: reviews,
+          };
+        }
+
+        // 5. Store result
         accountData = {
           account_id: accountHash,
           account_hash: accountHash,
           bank_code: bankCode || null,
-          trust_score: aiResult.trust_score,
-          risk_level: aiResult.risk_level,
+          trust_score: verifiedBusiness ? verifiedBusiness.trust_score : trustScore,
+          risk_level: verifiedBusiness ? 'low' : riskLevel,
           checks: {
             last_checked: admin.firestore.FieldValue.serverTimestamp(),
-            check_count: accountDoc.exists
-              ? accountDoc.data().checks?.check_count + 1
-              : 1,
-            fraud_reports: aiResult.fraud_reports,
-            verified_business_id: aiResult.verified_business_id || null,
-            flags: aiResult.flags || [],
+            check_count: realDoc.exists ? realDoc.data().checks?.check_count + 1 : 1,
+            proceed_rate: 0, // Will be calculated based on feedback
+            first_checked: realDoc.exists ? realDoc.data().checks?.first_checked : admin.firestore.FieldValue.serverTimestamp(),
+            fraud_reports: {
+              total: fraudCount,
+              recent_30_days: recentFraudCount,
+              details: fraudReports.slice(0, 5),
+            },
+            verified_business_id: verifiedBusiness?.business_id || null,
+            flags: fraudCount > 0 ? [`${fraudCount} fraud reports`] : [],
           },
           verified_business: verifiedBusiness,
+          created_at: realDoc.exists ? realDoc.data().created_at : admin.firestore.FieldValue.serverTimestamp(),
         };
 
         await this.db.collection('accounts').doc(accountHash).set(accountData);
       }
 
-      // Update check count and timestamp
-      await this.db
-        .collection('accounts')
-        .doc(accountHash)
-        .update({
-          'checks.last_checked': admin.firestore.FieldValue.serverTimestamp(),
-          'checks.check_count': admin.firestore.FieldValue.increment(1),
-        });
+      // Update check count and timestamp for real accounts
+      if (!demoDoc.exists) {
+        await this.db
+          .collection('accounts')
+          .doc(accountHash)
+          .update({
+            'checks.last_checked': admin.firestore.FieldValue.serverTimestamp(),
+            'checks.check_count': admin.firestore.FieldValue.increment(1),
+          });
+      }
 
       return {
         success: true,
@@ -223,10 +345,26 @@ export class AccountsService {
     const accountHash = this.hashAccountNumber(accountNumber);
 
     try {
-      // 1. Get account fraud summary
-      const accountDoc = await this.db.collection('accounts').doc(accountHash).get();
+      // Query BOTH demo and real fraud reports in parallel
+      const [demoReportsSnapshot, realReportsSnapshot] = await Promise.all([
+        this.db
+          .collection('demo_fraud_reports')
+          .where('account_hash', '==', accountHash)
+          .orderBy('reported_at', 'desc')
+          .limit(20)
+          .get(),
+        this.db
+          .collection('fraud_reports')
+          .where('account_hash', '==', accountHash)
+          .orderBy('reported_at', 'desc')
+          .limit(20)
+          .get(),
+      ]);
 
-      if (!accountDoc.exists) {
+      // Merge demo + real reports
+      const allReportsDocs = [...demoReportsSnapshot.docs, ...realReportsSnapshot.docs];
+      
+      if (allReportsDocs.length === 0) {
         return {
           success: true,
           data: {
@@ -239,24 +377,21 @@ export class AccountsService {
         };
       }
 
-      const accountData = accountDoc.data();
-      const fraudReports = accountData?.checks?.fraud_reports || { total: 0, recent_30_days: 0 };
-
-      // 2. Get detailed fraud reports (anonymized)
-      const reportsSnapshot = await this.db
-        .collection('fraud_reports')
-        .where('account_hash', '==', accountHash)
-        .orderBy('reported_at', 'desc')
-        .limit(20)
-        .get();
-
       const reports = [];
       const categoryCount = {};
       const patterns = new Set();
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      let recent30DaysCount = 0;
 
-      reportsSnapshot.docs.forEach((doc) => {
+      allReportsDocs.forEach((doc) => {
         const data = doc.data();
+        const reportedAt = data.reported_at?.toDate() || new Date();
         
+        // Count recent reports
+        if (reportedAt > thirtyDaysAgo) {
+          recent30DaysCount++;
+        }
+
         // Count categories
         if (data.category) {
           categoryCount[data.category] = (categoryCount[data.category] || 0) + 1;
@@ -271,26 +406,32 @@ export class AccountsService {
         reports.push({
           id: doc.id,
           category: data.category,
+          description_summary: data.description_summary || data.description?.substring(0, 100),
           severity: data.severity,
           pattern: this.extractPattern(data.description),
-          reported_at: data.reported_at?.toDate() || new Date(),
+          amount_lost: data.amount_lost || null,
+          reported_at: reportedAt,
           verified: data.verified || false,
+          is_demo: data.is_demo || false,
         });
       });
 
-      // 3. Format category data
+      // Sort by date (most recent first)
+      reports.sort((a, b) => b.reported_at.getTime() - a.reported_at.getTime());
+
+      // Format category data
       const categories = Object.entries(categoryCount).map(([type, count]) => ({
         type,
         count,
       })).sort((a, b) => (b.count as number) - (a.count as number));
 
-      this.logger.log(`✅ Retrieved ${reports.length} fraud reports`);
+      this.logger.log(`✅ Retrieved ${reports.length} fraud reports (${recent30DaysCount} in last 30 days)`);
 
       return {
         success: true,
         data: {
-          total: fraudReports.total,
-          recent_30_days: fraudReports.recent_30_days,
+          total: reports.length,
+          recent_30_days: recent30DaysCount,
           categories,
           patterns: Array.from(patterns).filter(Boolean),
           reports: reports.slice(0, 10), // Return max 10 for privacy
