@@ -18,7 +18,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed:demo": "ts-node scripts/seed-demo-data.ts"
+    "seed:demo": "ts-node scripts/seed-demo-data.ts",
+    "fraud:add": "ts-node scripts/add-fraud-report.ts",
+    "nft:mint-existing": "ts-node scripts/mint-nft-for-existing-businesses.ts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.75.0",
