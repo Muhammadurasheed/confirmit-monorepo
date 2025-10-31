@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentUpload from "./DocumentUpload";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Globe } from "lucide-react";
+import { CheckCircle2, Globe, Linkedin } from "lucide-react";
 import { BUSINESS_TIERS } from "@/lib/constants";
 import { LogoUpload } from "./LogoUpload";
 import { PhoneInput } from "@/components/shared/PhoneInput";
@@ -143,6 +143,52 @@ const RegistrationForm = ({ form, currentStep, onSubmit }: RegistrationFormProps
                     </div>
                   </FormControl>
                   <FormDescription>Your business website or social media page</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="linkedin"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>LinkedIn URL (Optional)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Linkedin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        type="url" 
+                        placeholder="https://www.linkedin.com/company/yourbusiness" 
+                        className="pl-10"
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>Your business LinkedIn profile</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="bio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Business Bio (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Tell us about your business, what you do, and what makes you unique..."
+                      className="resize-none"
+                      rows={4}
+                      maxLength={1000}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {field.value?.length || 0}/1000 characters
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -392,6 +438,24 @@ const RegistrationForm = ({ form, currentStep, onSubmit }: RegistrationFormProps
                   <p className="text-sm font-medium text-muted-foreground">Category</p>
                   <p className="text-sm">{form.watch("category")}</p>
                 </div>
+                {form.watch("website") && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Website</p>
+                    <p className="text-sm truncate">{form.watch("website")}</p>
+                  </div>
+                )}
+                {form.watch("linkedin") && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">LinkedIn</p>
+                    <p className="text-sm truncate">{form.watch("linkedin")}</p>
+                  </div>
+                )}
+                {form.watch("bio") && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Business Bio</p>
+                    <p className="text-sm line-clamp-3">{form.watch("bio")}</p>
+                  </div>
+                )}
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Email</p>

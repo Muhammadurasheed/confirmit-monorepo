@@ -26,7 +26,8 @@ import {
   Star,
   Eye,
   Clock,
-  MessageSquare
+  MessageSquare,
+  Linkedin as LinkedinIcon
 } from "lucide-react";
 
 /**
@@ -259,8 +260,42 @@ const BusinessProfile = () => {
                       </div>
                     </>
                   )}
+
+                  {business.linkedin && (
+                    <>
+                      <Separator />
+                      <div className="flex items-center gap-3">
+                        <LinkedinIcon className="h-5 w-5 text-primary flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium">LinkedIn</p>
+                          <a
+                            href={business.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline mt-1 block"
+                          >
+                            View LinkedIn Profile
+                          </a>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
+
+              {/* Business Bio */}
+              {business.bio && (
+                <Card className="shadow-elegant">
+                  <CardHeader>
+                    <CardTitle>About {business.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {business.bio}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Business Stats */}
               <Card className="shadow-elegant">

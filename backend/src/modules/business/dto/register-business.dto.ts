@@ -29,6 +29,16 @@ export class RegisterBusinessDto {
   @IsString()
   website?: string;
 
+  @ApiProperty({ example: 'https://www.linkedin.com/company/acme', required: false })
+  @IsOptional()
+  @IsString()
+  linkedin?: string;
+
+  @ApiProperty({ example: 'We are a leading electronics retailer...', required: false })
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
   @ApiProperty({ example: 'contact@acme.com' })
   @IsEmail()
   email: string;

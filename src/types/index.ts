@@ -103,6 +103,8 @@ export interface Business {
   category: string;
   logo?: string;
   website?: string;
+  linkedin?: string;
+  bio?: string;
   contact: ContactInfo;
   bankAccount: BankAccountInfo;
   verification: VerificationInfo;

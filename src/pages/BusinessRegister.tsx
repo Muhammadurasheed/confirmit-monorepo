@@ -34,6 +34,8 @@ export const businessSchema = z.object({
   category: z.string().min(1, "Please select a category"),
   logo: z.string().url().optional(),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
+  linkedin: z.string().url("Invalid LinkedIn URL").optional().or(z.literal("")),
+  bio: z.string().max(1000, "Bio must be less than 1000 characters").optional().or(z.literal("")),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Invalid phone number"),
   address: z.string().min(10, "Please provide a complete address"),
@@ -71,6 +73,8 @@ const BusinessRegister = () => {
       category: "",
       logo: "",
       website: "",
+      linkedin: "",
+      bio: "",
       email: "",
       phone: "",
       address: "",
@@ -86,7 +90,7 @@ const BusinessRegister = () => {
     let fieldsToValidate: (keyof BusinessFormData)[] = [];
     
     if (currentStep === 1) {
-      fieldsToValidate = ["name", "category", "website", "email", "phone", "address"];
+      fieldsToValidate = ["name", "category", "website", "linkedin", "bio", "email", "phone", "address"];
     } else if (currentStep === 2) {
       fieldsToValidate = ["accountNumber", "bankCode", "accountName"];
     }
@@ -121,6 +125,9 @@ const BusinessRegister = () => {
         name: data.name,
         category: data.category,
         logo: data.logo,
+        website: data.website,
+        linkedin: data.linkedin,
+        bio: data.bio,
         email: data.email,
         phone: data.phone,
         address: data.address,

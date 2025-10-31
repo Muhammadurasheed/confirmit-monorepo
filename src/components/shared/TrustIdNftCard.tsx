@@ -1,8 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Shield, ExternalLink, Award, Sparkles } from "lucide-react";
+import { ExternalLink, Award, Sparkles, Copy, Check, Shield } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { toast } from "sonner";
+import HederaBadge from "./HederaBadge";
+import confirmitLogo from "@/assets/confirmit-logo.png";
 
 interface TrustIdNftCardProps {
   tokenId: string;
@@ -65,7 +69,7 @@ const TrustIdNftCard = ({
           <div className="p-6 rounded-lg bg-gradient-to-br from-primary/20 via-accent/10 to-primary/10 border border-primary/20">
             <div className="flex flex-col items-center justify-center space-y-3">
               <div className="p-4 rounded-full bg-background/80 backdrop-blur-sm">
-                <Shield className="h-12 w-12 text-primary fill-primary/20" />
+                <img src={confirmitLogo} alt="ConfirmIT" className="h-12 w-12" />
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-primary">{trustScore}</p>

@@ -8,6 +8,7 @@ import Footer from "@/components/layout/Footer";
 import Container from "@/components/layout/Container";
 import { TechStackCarousel } from "@/components/shared/TechStackCarousel";
 import { Shield, Scan, UserCheck, Building2, ArrowRight, CheckCircle2, TrendingUp } from "lucide-react";
+import confirmitLogo from "@/assets/confirmit-logo.png";
 
 const Index = () => {
   // Animated counter for trust indicators
@@ -55,7 +56,7 @@ const Index = () => {
                 className="mb-6 flex justify-center"
               >
                 <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 shadow-glow backdrop-blur-sm">
-                  <Shield className="h-12 w-12" />
+                  <img src={confirmitLogo} alt="ConfirmIT" className="h-12 w-12" />
                 </div>
               </motion.div>
               
