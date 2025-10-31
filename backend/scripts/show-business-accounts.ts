@@ -42,24 +42,43 @@ async function showBusinessAccounts() {
   
   console.log(`\n📊 Found ${snapshot.size} approved businesses\n`);
   
-  // Common test account numbers to check against
+  // Extended list of test account numbers to check
   const testAccounts = [
     '0123456789', '1234567890', '9876543210', '0987654321',
     '8166600027', '2345678901', '3456789012', '4567890123',
+    '5678901234', '6789012345', '7890123456', '8901234567',
+    '9012345678', '0111111111', '0222222222', '0333333333',
   ];
+  
+  // Group businesses by their hash for easier analysis
+  const businessesByHash: Map<string, any[]> = new Map();
   
   for (const doc of snapshot.docs) {
     const data = doc.data();
     const accountHash = data.bank_account?.number_encrypted;
     
-    console.log(`\n${'─'.repeat(60)}`);
-    console.log(`📋 Business: ${data.business_name}`);
-    console.log(`   ID: ${doc.id}`);
-    console.log(`   Tier: ${data.tier || 'N/A'}`);
-    console.log(`   Location: ${data.location || 'N/A'}`);
+    if (!businessesByHash.has(accountHash)) {
+      businessesByHash.set(accountHash, []);
+    }
+    businessesByHash.get(accountHash)?.push({ id: doc.id, ...data });
+  }
+  
+  console.log(`\n📊 Found ${businessesByHash.size} unique account hashes\n`);
+  
+  let hashIndex = 1;
+  for (const [accountHash, businesses] of businessesByHash.entries()) {
+    console.log(`\n${'━'.repeat(60)}`);
+    console.log(`🔐 Hash Group ${hashIndex++}:`);
     console.log(`   Hash: ${accountHash}`);
+    console.log(`   Businesses using this account: ${businesses.length}`);
     
-    // Check if hash matches any common test accounts
+    // List all businesses with this hash
+    businesses.forEach((biz, idx) => {
+      console.log(`   ${idx + 1}. ${biz.business_name || 'Unnamed'} (${biz.id})`);
+      console.log(`      Tier: ${biz.tier || 'N/A'}, Location: ${biz.location || 'N/A'}`);
+    });
+    
+    // Check if hash matches any test accounts
     let foundMatch = false;
     for (const testNum of testAccounts) {
       const testHash = crypto.createHash('sha256')
@@ -67,37 +86,32 @@ async function showBusinessAccounts() {
         .digest('hex');
       
       if (testHash === accountHash) {
-        console.log(`   ✅ MATCH FOUND: Account number is ${testNum}`);
-        console.log(`   👉 Test this account in the UI!`);
+        console.log(`\n   ✅ MATCH FOUND!`);
+        console.log(`   📱 Account Number: ${testNum}`);
+        console.log(`   🎯 Use this number to test in Account Check!`);
         foundMatch = true;
         break;
       }
     }
     
     if (!foundMatch) {
-      console.log(`   ⚠️  Account number not in common test set`);
-      console.log(`   💡 Check your business registration data`);
-    }
-    
-    // Try to find recent account checks for this business
-    const accountCheckSnapshot = await db.collection('account_checks')
-      .where('verified_business.business_id', '==', doc.id)
-      .orderBy('created_at', 'desc')
-      .limit(1)
-      .get();
-    
-    if (!accountCheckSnapshot.empty) {
-      const accountData = accountCheckSnapshot.docs[0].data();
-      console.log(`   📝 Previous Check: ${accountData.account_number_masked}`);
+      console.log(`\n   ⚠️  No match in test account set`);
+      console.log(`   💡 This is likely a real account number entered during registration`);
+      console.log(`   📋 To find it, check the Firebase Console or your registration records`);
     }
   }
   
   console.log(`\n${'='.repeat(60)}`);
   console.log('\n💡 TESTING RECOMMENDATIONS:\n');
-  console.log('1. Try demo account: 0123456789 (TechHub Electronics)');
-  console.log('2. Try any accounts marked with ✅ MATCH FOUND above');
-  console.log('3. If no matches found, check Firebase Console:');
-  console.log('   → Firestore → businesses → [your business] → bank_account');
+  console.log('1. Use ANY of the account numbers marked with ✅ MATCH FOUND above');
+  console.log('2. Those are the ONLY accounts that will show "VERIFIED BUSINESS"');
+  console.log('3. Testing with any other number will show "UNKNOWN" (expected)');
+  console.log('\n📝 If NO matches found:');
+  console.log('   → The account numbers used during registration are not in our test set');
+  console.log('   → Check Firebase Console: Firestore → businesses → [business] → bank_account');
+  console.log('   → Or register a new business with a known test account (e.g., 0123456789)');
+  console.log('\n🔥 CRITICAL: Create missing Firestore index first!');
+  console.log('   Click: https://console.firebase.google.com/v1/r/project/confirmit-8e623/firestore/indexes?create_composite=ClZwcm9qZWN0cy9jb25maXJtaXQtOGU2MjMvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2FjY291bnRfY2hlY2tzL2luZGV4ZXMvXxABGiEKHXZlcmlmaWVkX2J1c2luZXNzLmJ1c2luZXNzX2lkEAEaDgoKY3JlYXRlZF9hdBACGgwKCF9fbmFtZV9fEAI');
   console.log('\n' + '='.repeat(60));
 }
 

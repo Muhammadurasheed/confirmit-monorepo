@@ -12,11 +12,21 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { collection, query, where, orderBy, getDocs, limit } from "firebase/firestore";
+import { collection, query, where, orderBy, getDocs, limit, deleteDoc, doc } from "firebase/firestore";
 import { FileText, Calendar, AlertCircle, CheckCircle2, AlertTriangle, Trash2, ShieldCheck, Eye } from "lucide-react";
 import TrustScoreGauge from "@/components/shared/TrustScoreGauge";
 import { format } from "date-fns";
 import { ViewAccountResultModal } from "@/components/features/account-check/ViewAccountResultModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ReceiptHistory {
   id: string;
@@ -54,6 +64,9 @@ const ActivityHistory = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "receipts" | "accounts" | "authentic" | "suspicious" | "fraudulent">("all");
   const [selectedAccountCheck, setSelectedAccountCheck] = useState<AccountCheckHistory | null>(null);
+  const [activityToDelete, setActivityToDelete] = useState<ActivityItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showClearAllDialog, setShowClearAllDialog] = useState(false);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -127,6 +140,52 @@ const ActivityHistory = () => {
 
     fetchHistory();
   }, [user]);
+
+  const handleDeleteActivity = async (activity: ActivityItem) => {
+    if (!db || !user) return;
+    
+    setIsDeleting(true);
+    try {
+      // Delete from the appropriate collection based on type
+      const collectionName = activity.type === 'receipt_scan' ? 'receipts' : 'account_checks';
+      await deleteDoc(doc(db, collectionName, activity.id));
+      
+      // Remove from local state
+      setReceipts(prev => prev.filter(a => a.id !== activity.id));
+      
+      toast.success('Activity deleted successfully');
+      setActivityToDelete(null);
+    } catch (error) {
+      console.error('Error deleting activity:', error);
+      toast.error('Failed to delete activity');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleClearAllHistory = async () => {
+    if (!db || !user) return;
+    
+    setIsDeleting(true);
+    try {
+      // Delete all activities for current user
+      const deletePromises = receipts.map(activity => {
+        const collectionName = activity.type === 'receipt_scan' ? 'receipts' : 'account_checks';
+        return deleteDoc(doc(db, collectionName, activity.id));
+      });
+      
+      await Promise.all(deletePromises);
+      
+      setReceipts([]);
+      toast.success('All history cleared successfully');
+      setShowClearAllDialog(false);
+    } catch (error) {
+      console.error('Error clearing history:', error);
+      toast.error('Failed to clear history');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const getVerdictColor = (verdict: string) => {
     switch (verdict) {
@@ -221,12 +280,26 @@ const ActivityHistory = () => {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="mb-8 flex justify-between items-start"
           >
-            <h1 className="text-4xl font-bold mb-2">Activity History</h1>
-            <p className="text-muted-foreground">
-              View all your scanned receipts and checked accounts ({receipts.length} total)
-            </p>
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Activity History</h1>
+              <p className="text-muted-foreground">
+                View all your scanned receipts and checked accounts ({receipts.length} total)
+              </p>
+            </div>
+            
+            {receipts.length > 0 && user && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowClearAllDialog(true)}
+                disabled={isDeleting}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear All History
+              </Button>
+            )}
           </motion.div>
 
           <Tabs defaultValue="all" value={filter} onValueChange={(v) => setFilter(v as any)}>
@@ -317,13 +390,35 @@ const ActivityHistory = () => {
                                       format(item.created_at.toDate(), "PPp") :
                                       format(new Date(item.created_at), "PPp")
                                     }
-                                  </p>
-                                </div>
-                                <Button variant="ghost" size="sm">
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Report
-                                </Button>
-                              </div>
+                                   </p>
+                                 </div>
+                                 <div className="flex gap-2">
+                                   <Button 
+                                     variant="ghost" 
+                                     size="sm"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       navigate(`/quick-scan?receipt=${item.receipt_id}`);
+                                     }}
+                                   >
+                                     <Eye className="h-4 w-4 mr-2" />
+                                     View Report
+                                   </Button>
+                                   {user && (
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         setActivityToDelete(item);
+                                       }}
+                                       disabled={isDeleting}
+                                     >
+                                       <Trash2 className="h-4 w-4 text-destructive" />
+                                     </Button>
+                                   )}
+                                 </div>
+                               </div>
                             </div>
                           </div>
                         </CardContent>
@@ -386,20 +481,35 @@ const ActivityHistory = () => {
                                   format(new Date(item.created_at), "PPp")
                                 }
                               </p>
-                            </div>
-                            
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedAccountCheck(item as AccountCheckHistory);
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Result
-                            </Button>
-                          </div>
+                             </div>
+                             
+                             <div className="flex gap-2">
+                               <Button 
+                                 variant="ghost" 
+                                 size="sm"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   setSelectedAccountCheck(item as AccountCheckHistory);
+                                 }}
+                               >
+                                 <Eye className="h-4 w-4 mr-2" />
+                                 View Result
+                               </Button>
+                               {user && (
+                                 <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     setActivityToDelete(item);
+                                   }}
+                                   disabled={isDeleting}
+                                 >
+                                   <Trash2 className="h-4 w-4 text-destructive" />
+                                 </Button>
+                               )}
+                             </div>
+                           </div>
                         </CardContent>
                       </Card>
                     )}
@@ -420,6 +530,53 @@ const ActivityHistory = () => {
           data={selectedAccountCheck}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!activityToDelete} onOpenChange={() => setActivityToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Activity</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this {activityToDelete?.type === 'receipt_scan' ? 'receipt scan' : 'account check'}? 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => activityToDelete && handleDeleteActivity(activityToDelete)}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Clear All Confirmation Dialog */}
+      <AlertDialog open={showClearAllDialog} onOpenChange={setShowClearAllDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear All History</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete all {receipts.length} activities? 
+              This will permanently remove all receipt scans and account checks from your history.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearAllHistory}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Clearing...' : 'Clear All'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
