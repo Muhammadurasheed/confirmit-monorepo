@@ -16,6 +16,7 @@ import { collection, query, where, orderBy, getDocs, limit } from "firebase/fire
 import { FileText, Calendar, AlertCircle, CheckCircle2, AlertTriangle, Trash2, ShieldCheck, Eye } from "lucide-react";
 import TrustScoreGauge from "@/components/shared/TrustScoreGauge";
 import { format } from "date-fns";
+import { ViewAccountResultModal } from "@/components/features/account-check/ViewAccountResultModal";
 
 interface ReceiptHistory {
   id: string;
@@ -51,7 +52,8 @@ const ActivityHistory = () => {
   const { user } = useAuth();
   const [receipts, setReceipts] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "authentic" | "suspicious" | "fraudulent">("all");
+  const [filter, setFilter] = useState<"all" | "receipts" | "accounts" | "authentic" | "suspicious" | "fraudulent">("all");
+  const [selectedAccountCheck, setSelectedAccountCheck] = useState<AccountCheckHistory | null>(null);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -154,6 +156,9 @@ const ActivityHistory = () => {
 
   const filteredReceipts = receipts.filter((item) => {
     if (filter === "all") return true;
+    if (filter === "receipts") return item.type === 'receipt_scan';
+    if (filter === "accounts") return item.type === 'account_check';
+    
     // For receipts, filter by verdict
     if (item.type === 'receipt_scan') {
       return item.verdict === filter;
@@ -225,8 +230,14 @@ const ActivityHistory = () => {
           </motion.div>
 
           <Tabs defaultValue="all" value={filter} onValueChange={(v) => setFilter(v as any)}>
-            <TabsList className="mb-6">
+            <TabsList className="mb-6 flex-wrap h-auto">
               <TabsTrigger value="all">All ({receipts.length})</TabsTrigger>
+              <TabsTrigger value="receipts">
+                Receipts ({receipts.filter(r => r.type === 'receipt_scan').length})
+              </TabsTrigger>
+              <TabsTrigger value="accounts">
+                Account Checks ({receipts.filter(r => r.type === 'account_check').length})
+              </TabsTrigger>
               <TabsTrigger value="authentic">
                 Safe ({receipts.filter(r => 
                   (r.type === 'receipt_scan' && r.verdict === "authentic") ||
@@ -319,7 +330,8 @@ const ActivityHistory = () => {
                       </Card>
                     ) : (
                       <Card 
-                        className="overflow-hidden hover:shadow-lg transition-shadow"
+                        className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => setSelectedAccountCheck(item as AccountCheckHistory)}
                       >
                         <CardContent className="p-6">
                           <div className="flex items-start justify-between">
@@ -375,6 +387,18 @@ const ActivityHistory = () => {
                                 }
                               </p>
                             </div>
+                            
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedAccountCheck(item as AccountCheckHistory);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Result
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -387,6 +411,15 @@ const ActivityHistory = () => {
         </Container>
       </main>
       <Footer />
+
+      {/* Account Check Result Modal */}
+      {selectedAccountCheck && (
+        <ViewAccountResultModal
+          open={!!selectedAccountCheck}
+          onOpenChange={(open) => !open && setSelectedAccountCheck(null)}
+          data={selectedAccountCheck}
+        />
+      )}
     </div>
   );
 };
