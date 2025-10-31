@@ -170,7 +170,38 @@ export class AccountsService {
         // Check if linked to verified business
         let verifiedBusiness = null;
         
-        this.logger.log(`🔍 Looking for verified business with account hash: ${accountHash.slice(0, 16)}...`);
+        this.logger.log(`\n${'='.repeat(60)}`);
+        this.logger.log(`🔍 ACCOUNT CHECK DEBUG INFO`);
+        this.logger.log(`📱 Account: ${accountNumber.slice(0, 3)}***${accountNumber.slice(-2)}`);
+        this.logger.log(`🔐 SHA-256 Hash: ${accountHash}`);
+        
+        // First check how many businesses we have total
+        const allBusinessesSnapshot = await this.db
+          .collection('businesses')
+          .limit(5)
+          .get();
+        
+        this.logger.log(`📊 Total businesses in database (sample): ${allBusinessesSnapshot.size}`);
+        
+        // Log sample business data for debugging
+        let approvedCount = 0;
+        allBusinessesSnapshot.docs.forEach((doc, index) => {
+          const data = doc.data();
+          const isApproved = data.verification?.verified === true;
+          if (isApproved) approvedCount++;
+          
+          this.logger.log(`\n📋 Business ${index + 1}: ${data.business_name || data.name}`);
+          this.logger.log(`   ID: ${doc.id}`);
+          this.logger.log(`   Approved: ${isApproved ? '✅' : '❌'}`);
+          this.logger.log(`   Hash stored: ${data.bank_account?.number_encrypted?.slice(0, 16)}...`);
+          
+          if (data.bank_account?.number_encrypted === accountHash) {
+            this.logger.log(`   🎯 HASH MATCH FOUND!`);
+          }
+        });
+        
+        this.logger.log(`\n📈 Approved businesses found: ${approvedCount}`);
+        this.logger.log(`🔎 Now querying for exact match...`);
         
         const businessSnapshot = await this.db
           .collection('businesses')
@@ -179,7 +210,8 @@ export class AccountsService {
           .limit(1)
           .get();
         
-        this.logger.log(`📊 Found ${businessSnapshot.size} verified businesses matching this account`);
+        this.logger.log(`📊 Query result: ${businessSnapshot.size} verified businesses with matching hash`);
+        this.logger.log(`${'='.repeat(60)}\n`);
 
         if (!businessSnapshot.empty) {
           const businessDoc = businessSnapshot.docs[0];
