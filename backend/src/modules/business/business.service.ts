@@ -339,8 +339,9 @@ export class BusinessService {
         .doc(businessId)
         .update(updateData);
 
-      // CRITICAL: Invalidate account cache when business is approved
-      // This ensures the account check immediately reflects the new verified business
+      // CRITICAL: Update account cache immediately when business is approved
+      // Instead of just deleting, we UPDATE the cache with verified business data
+      // This ensures instant reflection of the new verified status
       const accountHash = business.bank_account?.number_encrypted;
       if (accountHash) {
         try {
@@ -348,13 +349,84 @@ export class BusinessService {
           const accountDoc = await accountRef.get();
           
           if (accountDoc.exists) {
-            // Delete cached account data to force fresh lookup
-            await accountRef.delete();
-            this.logger.log(`🔄 Invalidated cache for account: ${accountHash.slice(0, 8)}...`);
+            // Update cache with verified business data
+            const existingData = accountDoc.data();
+            await accountRef.set({
+              account_id: accountHash,
+              account_hash: accountHash,
+              bank_code: business.bank_account?.bank_code || existingData.bank_code,
+              trust_score: initialTrustScore,
+              risk_level: 'low',
+              checks: {
+                last_checked: admin.firestore.FieldValue.serverTimestamp(),
+                check_count: existingData.checks?.check_count || 0,
+                proceed_rate: existingData.checks?.proceed_rate || 0,
+                first_checked: existingData.checks?.first_checked || admin.firestore.FieldValue.serverTimestamp(),
+                fraud_reports: existingData.checks?.fraud_reports || {
+                  total: 0,
+                  recent_30_days: 0,
+                  details: [],
+                },
+                verified_business_id: businessId,
+                flags: [],
+              },
+              verified_business: {
+                business_id: businessId,
+                name: business.name,
+                verified: true,
+                trust_score: initialTrustScore,
+                rating: business.rating || 0,
+                review_count: business.review_count || 0,
+                location: business.contact?.address || '',
+                tier: business.verification.tier,
+                verification_date: new Date(),
+                reviews: [],
+              },
+              created_at: existingData.created_at || admin.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true });
+            
+            this.logger.log(`✅ Updated cache with verified business for account: ${accountHash.slice(0, 8)}...`);
+          } else {
+            // No cache exists yet - create it with verified business data
+            await accountRef.set({
+              account_id: accountHash,
+              account_hash: accountHash,
+              bank_code: business.bank_account?.bank_code,
+              trust_score: initialTrustScore,
+              risk_level: 'low',
+              checks: {
+                last_checked: admin.firestore.FieldValue.serverTimestamp(),
+                check_count: 0,
+                proceed_rate: 0,
+                first_checked: admin.firestore.FieldValue.serverTimestamp(),
+                fraud_reports: {
+                  total: 0,
+                  recent_30_days: 0,
+                  details: [],
+                },
+                verified_business_id: businessId,
+                flags: [],
+              },
+              verified_business: {
+                business_id: businessId,
+                name: business.name,
+                verified: true,
+                trust_score: initialTrustScore,
+                rating: business.rating || 0,
+                review_count: business.review_count || 0,
+                location: business.contact?.address || '',
+                tier: business.verification.tier,
+                verification_date: new Date(),
+                reviews: [],
+              },
+              created_at: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            
+            this.logger.log(`✅ Created cache with verified business for account: ${accountHash.slice(0, 8)}...`);
           }
         } catch (error) {
-          this.logger.warn(`Failed to invalidate account cache: ${error.message}`);
-          // Don't fail the approval if cache invalidation fails
+          this.logger.warn(`Failed to update account cache: ${error.message}`);
+          // Don't fail the approval if cache update fails
         }
       }
 
