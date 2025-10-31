@@ -64,6 +64,9 @@ export class AccountsService {
               };
             });
 
+            // Convert dates to ISO strings for JSON serialization
+            const verificationDate = businessData.verified_at?.toDate() || new Date();
+            
             verifiedBusiness = {
               business_id: businessDoc.id,
               name: businessData.business_name || businessData.name || 'Unknown Business',
@@ -73,7 +76,7 @@ export class AccountsService {
               review_count: businessData.review_count || 0,
               location: businessData.location || businessData.contact?.address || 'N/A',
               tier: businessData.tier || 1,
-              verification_date: businessData.verified_at?.toDate() || new Date(),
+              verification_date: verificationDate.toISOString(), // Always return ISO string
               reviews: reviews || [],
             };
           }
@@ -238,6 +241,11 @@ export class AccountsService {
             };
           });
 
+          // Convert dates to ISO strings for JSON serialization
+          const verificationDate = businessData.verification?.verified_at?.toDate() || 
+                                   businessData.verified_at?.toDate() || 
+                                   new Date();
+          
           verifiedBusiness = {
             business_id: businessDoc.id,
             name: businessData.business_name || businessData.name || 'Unknown Business',
@@ -247,7 +255,7 @@ export class AccountsService {
             review_count: businessData.review_count || 0,
             location: businessData.location || businessData.contact?.address || 'N/A',
             tier: businessData.verification?.tier || businessData.tier || 1,
-            verification_date: businessData.verification?.verified_at?.toDate() || businessData.verified_at?.toDate() || new Date(),
+            verification_date: verificationDate.toISOString(), // Always return ISO string
             reviews: reviews || [],
           };
         }

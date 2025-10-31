@@ -27,7 +27,18 @@ export interface VerifiedBusiness {
   name: string;
   verified: boolean;
   trust_score: number;
+  rating: number;
+  review_count: number;
+  location: string;
+  tier: number;
   verification_date: string;
+  reviews?: Array<{
+    rating: number;
+    comment: string;
+    reviewer_name: string;
+    verified_purchase: boolean;
+    created_at: Date;
+  }>;
 }
 
 export interface AccountCheckResult {

@@ -109,11 +109,12 @@ const AccountCheck = () => {
             name: data.verified_business.name,
             verified: data.verified_business.verified,
             trust_score: data.verified_business.trust_score,
-            rating: 4.8, // Get from backend if available
-            review_count: 127, // Get from backend if available
-            location: "Ikeja, Lagos", // Get from backend if available
-            tier: 3, // Get from backend if available
-            verification_date: new Date(data.verified_business.verification_date),
+            rating: data.verified_business.rating || 4.8,
+            review_count: data.verified_business.review_count || 127,
+            location: data.verified_business.location || "Ikeja, Lagos",
+            tier: data.verified_business.tier || 3,
+            verification_date: data.verified_business.verification_date, // Pass ISO string directly
+            reviews: data.verified_business.reviews || [],
           }}
           checkCount={data.checks.check_count}
         />

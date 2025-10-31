@@ -20,7 +20,7 @@ interface VerifiedResultProps {
     review_count: number;
     location?: string;
     tier: number;
-    verification_date?: Date | null;
+    verification_date?: string | Date | null; // Can be ISO string or Date
     reviews?: Array<{
       rating: number;
       comment: string;
@@ -149,19 +149,31 @@ export const VerifiedResult = ({
                 <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
                 <span>Business Documents Approved</span>
               </div>
-              {business.verification_date && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <span className="text-muted-foreground">
-                    Verified since {format(
-                      typeof business.verification_date === 'string' 
-                        ? new Date(business.verification_date) 
-                        : business.verification_date, 
-                      "MMMM yyyy"
-                    )}
-                  </span>
-                </div>
-              )}
+              {business.verification_date && (() => {
+                try {
+                  // Safely parse the date
+                  const date = typeof business.verification_date === 'string' 
+                    ? new Date(business.verification_date) 
+                    : business.verification_date;
+                  
+                  // Validate the date is valid
+                  if (!date || isNaN(date.getTime())) {
+                    return null; // Skip rendering if invalid date
+                  }
+                  
+                  return (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-muted-foreground">
+                        Verified since {format(date, "MMMM yyyy")}
+                      </span>
+                    </div>
+                  );
+                } catch (error) {
+                  console.error('Date formatting error:', error);
+                  return null; // Skip rendering on error
+                }
+              })()}
             </div>
           </div>
 
