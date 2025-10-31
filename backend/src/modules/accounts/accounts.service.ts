@@ -66,12 +66,12 @@ export class AccountsService {
 
             verifiedBusiness = {
               business_id: businessDoc.id,
-              name: businessData.business_name,
+              name: businessData.business_name || businessData.name || 'Unknown Business',
               verified: businessData.verified,
               trust_score: businessData.trust_score || 0,
               rating: businessData.rating || 0,
               review_count: businessData.review_count || 0,
-              location: businessData.location || '',
+              location: businessData.location || businessData.contact?.address || 'N/A',
               tier: businessData.tier || 1,
               verification_date: businessData.verified_at?.toDate() || null,
               reviews: reviews,
@@ -240,12 +240,12 @@ export class AccountsService {
 
           verifiedBusiness = {
             business_id: businessDoc.id,
-            name: businessData.business_name,
+            name: businessData.business_name || businessData.name || 'Unknown Business',
             verified: true,
             trust_score: businessData.trust_score || 0,
             rating: businessData.rating || 0,
             review_count: businessData.review_count || 0,
-            location: businessData.location || '',
+            location: businessData.location || businessData.contact?.address || 'N/A',
             tier: businessData.tier || 1,
             verification_date: businessData.verified_at?.toDate() || null,
             reviews: reviews,

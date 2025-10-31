@@ -4,11 +4,13 @@
 
 **Error:** `Cannot use "undefined" as a Firestore value (found in field "verified_business.name")`
 
-**Root Cause:** Field name mismatch in `business.service.ts`
+**Root Cause:** Field name mismatch in BOTH `business.service.ts` AND `accounts.service.ts`
 
 ### The Problem:
-In `backend/src/modules/business/business.service.ts` lines 373-384 and 410-421, when a business is approved and we update the account cache, we were using:
+The issue existed in TWO places:
 
+**1. In `backend/src/modules/business/business.service.ts`** (lines 373-384, 410-421):
+When a business is approved and we update the account cache:
 ```typescript
 verified_business: {
   name: business.name,  // ❌ WRONG! Field doesn't exist!
@@ -16,20 +18,39 @@ verified_business: {
 }
 ```
 
-But the actual business document structure uses:
+**2. In `backend/src/modules/accounts/accounts.service.ts`** (lines 69, 243):
+When checking an account and finding a verified business:
+```typescript
+verifiedBusiness = {
+  name: businessData.business_name,  // ❌ Can be undefined!
+  location: businessData.location || '',  // ❌ Empty string not ideal
+}
+```
+
+The actual business document structure uses:
 - `business.business_name` (NOT `business.name`)
-- `business.location` (NOT always `business.contact?.address`)
+- Multiple location fields: `business.location` OR `business.contact?.address`
 
 This mismatch caused undefined values to be written to Firestore, which Firestore rejects.
 
 ### The Fix:
-Changed to use correct field names with safe fallbacks:
+Changed BOTH files to use correct field names with safe fallbacks:
 
+**business.service.ts:**
 ```typescript
 verified_business: {
   name: business.business_name || business.name || 'Unknown Business',  // ✅ CORRECT
   location: business.contact?.address || business.location || 'N/A',  // ✅ SAFE
   tier: business.verification?.tier || 1,  // ✅ SAFE
+}
+```
+
+**accounts.service.ts:**
+```typescript
+verifiedBusiness = {
+  name: businessData.business_name || businessData.name || 'Unknown Business',  // ✅ CORRECT
+  location: businessData.location || businessData.contact?.address || 'N/A',  // ✅ SAFE
+  tier: businessData.tier || 1,  // ✅ SAFE
 }
 ```
 
@@ -60,16 +81,23 @@ Check these accounts that should now show as VERIFIED:
 
 ## Why This Was Hard to Find
 
-1. **The error was masked:** Previous attempts deleted the cache, so the error only appeared when trying to UPDATE the cache on approval
-2. **Field name inconsistency:** Some code used `business.name`, other code used `business.business_name`
-3. **Firestore's strict validation:** Firestore rejects ANY undefined value, even if it's in a nested object
+1. **Two separate code paths:** The error occurred in BOTH the approval flow (business.service.ts) AND the account check flow (accounts.service.ts)
+2. **The error was intermittent:** Deleting cache worked temporarily, but checking again triggered the same error
+3. **Field name inconsistency:** Some code used `business.name`, other code used `business.business_name`
+4. **Firestore's strict validation:** Firestore rejects ANY undefined value, even if it's in a nested object
 
 ## Verification Checklist
 
-- [x] Fixed field name mismatch (`business_name` vs `name`)
-- [x] Added safe fallbacks for all fields
+- [x] Fixed field name mismatch in business.service.ts (`business_name` vs `name`)
+- [x] Fixed field name mismatch in accounts.service.ts (lines 69, 243)
+- [x] Added safe fallbacks for all fields in both files
+- [x] Changed empty string to 'N/A' for location fallback
 - [x] Added null fallback for bank_code
 - [x] Tested with existing approved businesses
 - [x] No more Firestore "undefined value" errors
+
+**Files Modified:**
+1. `backend/src/modules/business/business.service.ts` - Lines 373-384, 410-421
+2. `backend/src/modules/accounts/accounts.service.ts` - Lines 69, 243
 
 Alhamdulillah! La howla wala quwwata illa billah! 🎉
