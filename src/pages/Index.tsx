@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Container from "@/components/layout/Container";
-import { Shield, Scan, UserCheck, Building2, ArrowRight, CheckCircle2, Star, TrendingUp, Users } from "lucide-react";
+import { TechStackCarousel } from "@/components/shared/TechStackCarousel";
+import { Shield, Scan, UserCheck, Building2, ArrowRight, CheckCircle2, TrendingUp } from "lucide-react";
 
 const Index = () => {
   // Animated counter for trust indicators
@@ -270,82 +271,16 @@ const Index = () => {
           </Container>
         </section>
 
-        {/* Testimonials Section */}
+        {/* Built With Section */}
         <section className="bg-muted/30 py-20">
           <Container>
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Trusted by Thousands</h2>
+              <h2 className="text-3xl font-bold mb-4">Built with World-Class Technology</h2>
               <p className="text-lg text-muted-foreground">
-                Real stories from people we've protected
+                Enterprise-grade infrastructure powering trust verification
               </p>
             </div>
-            <div className="grid gap-6 md:grid-cols-3">
-              <Card className="shadow-elegant">
-                <CardContent className="pt-6">
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-warning text-warning" />
-                    ))}
-                  </div>
-                  <p className="text-sm mb-4">
-                    "Confirmit saved me ₦850,000! The receipt looked real but the AI caught subtle manipulations. Incredible technology."
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Users className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">Sarah O.</p>
-                      <p className="text-xs text-muted-foreground">Business Owner, Lagos</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-elegant">
-                <CardContent className="pt-6">
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-warning text-warning" />
-                    ))}
-                  </div>
-                  <p className="text-sm mb-4">
-                    "Checked an account before paying for a laptop. High risk score saved me from a scammer. This app is a must-have!"
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center">
-                      <Users className="h-5 w-5 text-success" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">Emeka C.</p>
-                      <p className="text-xs text-muted-foreground">Software Engineer, Abuja</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-elegant">
-                <CardContent className="pt-6">
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-warning text-warning" />
-                    ))}
-                  </div>
-                  <p className="text-sm mb-4">
-                    "Our business registration gave us instant credibility. Customers trust us more now. Worth every kobo."
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center">
-                      <Users className="h-5 w-5 text-warning" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">Chiamaka N.</p>
-                      <p className="text-xs text-muted-foreground">ChiTech Solutions, Abuja</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <TechStackCarousel />
           </Container>
         </section>
 

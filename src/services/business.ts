@@ -5,6 +5,7 @@ export interface RegisterBusinessData {
   name: string;
   category: string;
   logo?: string;
+  website?: string;
   email: string;
   phone: string;
   address: string;

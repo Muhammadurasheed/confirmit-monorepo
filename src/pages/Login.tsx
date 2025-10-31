@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Shield, Mail, Lock, Chrome, UserCircle } from "lucide-react";
+import { Mail, Lock, UserCircle } from "lucide-react";
 import logo from "@/assets/logo.svg";
+import googleLogo from "@/assets/Google-logo.png";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ const Login = () => {
             onClick={handleGoogleSignIn}
             disabled={loading}
           >
-            <Chrome className="h-5 w-5 mr-2" />
+            <img src={googleLogo} alt="Google" className="h-5 w-5 mr-2" />
             Continue with Google
           </Button>
 

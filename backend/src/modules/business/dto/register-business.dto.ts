@@ -24,6 +24,11 @@ export class RegisterBusinessDto {
   @IsString()
   logo?: string;
 
+  @ApiProperty({ example: 'https://www.acmeelectronics.com', required: false })
+  @IsOptional()
+  @IsString()
+  website?: string;
+
   @ApiProperty({ example: 'contact@acme.com' })
   @IsEmail()
   email: string;

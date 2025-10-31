@@ -8,9 +8,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentUpload from "./DocumentUpload";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Globe } from "lucide-react";
 import { BUSINESS_TIERS } from "@/lib/constants";
 import { LogoUpload } from "./LogoUpload";
+import { PhoneInput } from "@/components/shared/PhoneInput";
 
 interface RegistrationFormProps {
   form: UseFormReturn<BusinessFormData>;
@@ -124,6 +125,29 @@ const RegistrationForm = ({ form, currentStep, onSubmit }: RegistrationFormProps
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="website"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Business Website (Optional)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        type="url" 
+                        placeholder="https://www.yourbusiness.com" 
+                        className="pl-10"
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>Your business website or social media page</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
@@ -146,7 +170,10 @@ const RegistrationForm = ({ form, currentStep, onSubmit }: RegistrationFormProps
                   <FormItem>
                     <FormLabel>Phone Number *</FormLabel>
                     <FormControl>
-                      <Input placeholder="+234 800 000 0000" {...field} />
+                      <PhoneInput 
+                        value={field.value} 
+                        onChange={field.onChange}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

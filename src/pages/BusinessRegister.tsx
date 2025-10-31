@@ -33,8 +33,9 @@ export const businessSchema = z.object({
   name: z.string().min(2, "Business name must be at least 2 characters").max(100),
   category: z.string().min(1, "Please select a category"),
   logo: z.string().url().optional(),
+  website: z.string().url("Invalid URL").optional().or(z.literal("")),
   email: z.string().email("Invalid email address"),
-  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number"),
+  phone: z.string().min(10, "Invalid phone number"),
   address: z.string().min(10, "Please provide a complete address"),
   
   // Step 2: Bank Account Details
@@ -69,6 +70,7 @@ const BusinessRegister = () => {
       name: "",
       category: "",
       logo: "",
+      website: "",
       email: "",
       phone: "",
       address: "",
@@ -84,7 +86,7 @@ const BusinessRegister = () => {
     let fieldsToValidate: (keyof BusinessFormData)[] = [];
     
     if (currentStep === 1) {
-      fieldsToValidate = ["name", "category", "email", "phone", "address"];
+      fieldsToValidate = ["name", "category", "website", "email", "phone", "address"];
     } else if (currentStep === 2) {
       fieldsToValidate = ["accountNumber", "bankCode", "accountName"];
     }
