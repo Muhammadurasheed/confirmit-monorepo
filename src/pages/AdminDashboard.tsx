@@ -18,10 +18,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, CheckCircle, XCircle, Eye, Building2, Clock } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Eye, Building2, Clock, Ban, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { BusinessDetailsModal } from "@/components/features/admin/BusinessDetailsModal";
+import { suspendBusiness, deleteBusiness } from "@/services/business";
 
 interface Business {
   business_id: string;
@@ -51,8 +52,11 @@ export default function AdminDashboard() {
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showSuspendDialog, setShowSuspendDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [suspensionReason, setSuspensionReason] = useState("");
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
@@ -204,6 +208,54 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleSuspend = async () => {
+    if (!selectedBusiness || !suspensionReason.trim()) {
+      toast.error("Please provide a suspension reason");
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const token = await user?.getIdToken();
+      if (!token) throw new Error("No auth token");
+
+      await suspendBusiness(selectedBusiness.business_id, suspensionReason, token);
+
+      toast.success("Business suspended successfully");
+      setShowSuspendDialog(false);
+      setSelectedBusiness(null);
+      setSuspensionReason("");
+      fetchBusinesses();
+    } catch (error) {
+      console.error("Suspension error:", error);
+      toast.error("Failed to suspend business");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedBusiness) return;
+
+    setProcessing(true);
+    try {
+      const token = await user?.getIdToken();
+      if (!token) throw new Error("No auth token");
+
+      await deleteBusiness(selectedBusiness.business_id, token);
+
+      toast.success("Business permanently deleted");
+      setShowDeleteDialog(false);
+      setSelectedBusiness(null);
+      fetchBusinesses();
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete business");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const getTierBadge = (tier: number) => {
     const tiers = {
       1: { label: "Basic", variant: "secondary" as const },
@@ -310,7 +362,7 @@ export default function AdminDashboard() {
                     </div>
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       size="sm"
                       onClick={() => {
@@ -395,14 +447,42 @@ export default function AdminDashboard() {
                           {getStatusBadge(business.verification.status).label}
                         </Badge>
                       </div>
-                      <Button
-                        size="sm"
-                        className="w-full mt-2"
-                        variant="outline"
-                        onClick={() => navigate(`/business/${business.business_id}`)}
-                      >
-                        View Profile
-                      </Button>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          variant="outline"
+                          onClick={() => navigate(`/business/${business.business_id}`)}
+                        >
+                          View Profile
+                        </Button>
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedBusiness(business);
+                            setShowSuspendDialog(true);
+                          }}
+                        >
+                          <Ban className="h-4 w-4 mr-1" />
+                          Suspend
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          variant="destructive"
+                          onClick={() => {
+                            setSelectedBusiness(business);
+                            setShowDeleteDialog(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -477,6 +557,72 @@ export default function AdminDashboard() {
                 </>
               ) : (
                 "Reject Application"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Suspend Dialog */}
+      <AlertDialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Suspend Business?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will suspend <strong>{selectedBusiness?.name}</strong> and remove their account from the directory. They can be reinstated later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4">
+            <Textarea
+              placeholder="Enter suspension reason (required)"
+              value={suspensionReason}
+              onChange={(e) => setSuspensionReason(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={processing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSuspend}
+              disabled={processing || !suspensionReason.trim()}
+              className="bg-orange-600 text-white hover:bg-orange-700"
+            >
+              {processing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Suspending...
+                </>
+              ) : (
+                "Suspend Business"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Permanently Delete Business?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will <strong className="text-destructive">permanently delete</strong> <strong>{selectedBusiness?.name}</strong> and all associated data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={processing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={processing}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {processing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Permanently Delete"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

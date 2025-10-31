@@ -616,6 +616,95 @@ export class BusinessService {
   }
 
   /**
+   * Suspend business (admin only)
+   */
+  async suspendBusiness(
+    businessId: string,
+    reason: string,
+    suspendedBy: string,
+  ) {
+    this.logger.log(`Suspending business: ${businessId}`);
+
+    const businessDoc = await this.db
+      .collection('businesses')
+      .doc(businessId)
+      .get();
+
+    if (!businessDoc.exists) {
+      throw new Error('Business not found');
+    }
+
+    // Update business status to suspended
+    await this.db
+      .collection('businesses')
+      .doc(businessId)
+      .update({
+        'verification.status': 'suspended',
+        'verification.suspension_reason': reason,
+        'verification.suspended_by': suspendedBy,
+        'verification.suspended_at': admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+    // Clear account cache if business has account linked
+    const businessData = businessDoc.data();
+    if (businessData?.bank_account?.number_encrypted) {
+      try {
+        const accountHash = businessData.bank_account.number_encrypted;
+        await this.db.collection('account_cache').doc(accountHash).delete();
+        this.logger.log(`Cleared account cache for suspended business: ${accountHash.slice(0, 8)}...`);
+      } catch (error) {
+        this.logger.warn(`Failed to clear account cache: ${error.message}`);
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Business suspended successfully',
+      business_id: businessId,
+    };
+  }
+
+  /**
+   * Permanently delete business (admin only)
+   */
+  async deleteBusiness(businessId: string, deletedBy: string) {
+    this.logger.log(`Permanently deleting business: ${businessId} by ${deletedBy}`);
+
+    const businessDoc = await this.db
+      .collection('businesses')
+      .doc(businessId)
+      .get();
+
+    if (!businessDoc.exists) {
+      throw new Error('Business not found');
+    }
+
+    const businessData = businessDoc.data();
+
+    // Clear account cache if business has account linked
+    if (businessData?.bank_account?.number_encrypted) {
+      try {
+        const accountHash = businessData.bank_account.number_encrypted;
+        await this.db.collection('account_cache').doc(accountHash).delete();
+        this.logger.log(`Cleared account cache for deleted business: ${accountHash.slice(0, 8)}...`);
+      } catch (error) {
+        this.logger.warn(`Failed to clear account cache: ${error.message}`);
+      }
+    }
+
+    // Delete the business document
+    await this.db.collection('businesses').doc(businessId).delete();
+
+    this.logger.log(`Business ${businessId} permanently deleted by ${deletedBy}`);
+
+    return {
+      success: true,
+      message: 'Business permanently deleted',
+      business_id: businessId,
+    };
+  }
+
+  /**
    * Mark payment as completed
    */
   async completePayment(businessId: string, paymentData: any) {

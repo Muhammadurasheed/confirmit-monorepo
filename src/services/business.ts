@@ -112,3 +112,46 @@ export const generateApiKey = async (
 
   return response.json();
 };
+
+export const suspendBusiness = async (
+  businessId: string,
+  reason: string,
+  token: string
+): Promise<{ success: boolean; message: string }> => {
+  const response = await fetch(`${API_ENDPOINTS.ADMIN_BUSINESSES}/suspend/${businessId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ reason, suspendedBy: "admin" }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to suspend business");
+  }
+
+  return response.json();
+};
+
+export const deleteBusiness = async (
+  businessId: string,
+  token: string
+): Promise<{ success: boolean; message: string }> => {
+  const response = await fetch(`${API_ENDPOINTS.ADMIN_BUSINESSES}/delete/${businessId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ deletedBy: "admin" }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to delete business");
+  }
+
+  return response.json();
+};

@@ -49,4 +49,28 @@ export class BusinessAdminController {
       body.rejectedBy,
     );
   }
+
+  @Post('suspend/:id')
+  @Admin()
+  @ApiOperation({ summary: 'Suspend business' })
+  async suspendBusiness(
+    @Param('id') id: string,
+    @Body() body: { reason: string; suspendedBy: string },
+  ) {
+    return this.businessService.suspendBusiness(
+      id,
+      body.reason,
+      body.suspendedBy,
+    );
+  }
+
+  @Post('delete/:id')
+  @Admin()
+  @ApiOperation({ summary: 'Permanently delete business' })
+  async deleteBusiness(
+    @Param('id') id: string,
+    @Body() body: { deletedBy: string },
+  ) {
+    return this.businessService.deleteBusiness(id, body.deletedBy);
+  }
 }
