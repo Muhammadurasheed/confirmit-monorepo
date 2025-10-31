@@ -126,10 +126,12 @@ export class AccountsService {
       }
 
       // 3. No demo data, check real data
+      // REDUCED CACHE TIME: Refresh every 1 hour for demo (was 7 days)
+      // This ensures newly approved businesses appear immediately
       const shouldRefresh =
         !realDoc.exists ||
         Date.now() - realDoc.data()?.checks?.last_checked?.toMillis() >
-          7 * 24 * 60 * 60 * 1000; // 7 days
+          60 * 60 * 1000; // 1 hour cache
 
       let accountData: any;
 

@@ -339,6 +339,25 @@ export class BusinessService {
         .doc(businessId)
         .update(updateData);
 
+      // CRITICAL: Invalidate account cache when business is approved
+      // This ensures the account check immediately reflects the new verified business
+      const accountHash = business.bank_account?.number_encrypted;
+      if (accountHash) {
+        try {
+          const accountRef = this.db.collection('accounts').doc(accountHash);
+          const accountDoc = await accountRef.get();
+          
+          if (accountDoc.exists) {
+            // Delete cached account data to force fresh lookup
+            await accountRef.delete();
+            this.logger.log(`🔄 Invalidated cache for account: ${accountHash.slice(0, 8)}...`);
+          }
+        } catch (error) {
+          this.logger.warn(`Failed to invalidate account cache: ${error.message}`);
+          // Don't fail the approval if cache invalidation fails
+        }
+      }
+
       const successMessage = nftError 
         ? `Business ${businessId} verified (NFT minting pending: ${nftError})`
         : `Business ${businessId} verified successfully with NFT ${nftData.serial_number}`;
