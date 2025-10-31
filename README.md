@@ -12,7 +12,7 @@
 [![API Docs](https://img.shields.io/badge/API-Swagger-blue?style=for-the-badge)](https://your-backend-url.onrender.com/api/docs)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
 
-[🎥 Demo Video](#) • [📊 Pitch Deck](#pitch-deck--certification) • [🔗 Live App](#) • [📖 Documentation](#)
+[🎥 Demo Video](#) • [📊 Pitch Deck](https://docs.google.com/presentation/d/1n1mNYp5kNTjPo_19cs24kCfPVoaTU0WL/edit?usp=drive_link&ouid=100566955191621926851&rtpof=true&sd=true) • [🔗 Live App](#) • [📖 Documentation](#)
 
 </div>
 

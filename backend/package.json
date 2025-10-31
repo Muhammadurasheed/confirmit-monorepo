@@ -7,11 +7,10 @@
   "license": "MIT",
   "scripts": {
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "start": "node dist/main.js",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -68,22 +67,5 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.3.3"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
 }
