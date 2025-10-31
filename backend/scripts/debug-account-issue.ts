@@ -4,16 +4,29 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 
 // Load environment variables
-dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-// Initialize Firebase
-const serviceAccount = JSON.parse(
-  process.env.FIREBASE_SERVICE_ACCOUNT || '{}'
-);
-
+// Initialize Firebase Admin
 if (!admin.apps.length) {
+  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+
+  if (!projectId || !privateKey || !clientEmail) {
+    console.error('❌ Missing Firebase credentials:');
+    console.error('FIREBASE_PROJECT_ID:', projectId ? '✓' : '✗');
+    console.error('FIREBASE_PRIVATE_KEY:', privateKey ? '✓' : '✗');
+    console.error('FIREBASE_CLIENT_EMAIL:', clientEmail ? '✓' : '✗');
+    throw new Error('Missing required Firebase environment variables');
+  }
+
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: admin.credential.cert({
+      projectId,
+      privateKey,
+      clientEmail,
+    }),
   });
 }
 
